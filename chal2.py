@@ -50,19 +50,20 @@ class Tb3(Node):
 
         print('state: ', self.state)
         print('\nmin Distance to front object:', min([msg.ranges[x] for x in range(-90, 90)]))
+        print('min Distance to back object:', msg.ranges[180])
         print('Minimal distance front wall to back wall: ', min([msg.ranges[x] for x in range(-30, 30)]) + min([msg.ranges[x] for x in range(150, 210)]))
         print('Minimal distance left wall to right wall: ', min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
         dis = min([msg.ranges[x] for x in range(-30, 30)])
 
-        min_dist = 0.35 # half robot
-        min_dist_back = 0.25
+        min_dist = 0.30 # half robot
+        min_dist_back = 0.165
         if self.state == 0:
             if dis > min_dist:
                 self.vel(20, 0)
             else:
                 self.state = 1
         elif self.state == 1:
-            self.vel(0, 30)
+            self.vel(0, 5)
             if msg.ranges[180] < min_dist_back:
                 self.state = 0
 
