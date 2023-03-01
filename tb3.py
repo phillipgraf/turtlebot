@@ -44,20 +44,23 @@ class Tb3(Node):
     def scan_callback(self, msg):
         """ is run whenever a LaserScan msg is received
         """
-        # print()
-        # print('Distances:')
-        print('Up:', msg.ranges[0])
-        print('Down:', msg.ranges[180])
-        print('min -90 90:', min([msg.ranges[x] for x in range(-90, 90)]))
-        print('min 90 -90:', min([msg.ranges[x] for x in range(90, 270)]))
-        print('Minimal distance: ', min([msg.ranges[x] for x in range(-90, 90)]) + min([msg.ranges[x] for x in range(90, 270)]), '\n\n')
 
+        print('\nmin Distance to front object:', min([msg.ranges[x] for x in range(-90, 90)]))
+        print('Minimal distance front wall to back wall: ', min([msg.ranges[x] for x in range(-30, 30)]) + min([msg.ranges[x] for x in range(150, 210)]))
+        print('Minimal distance left wall to right wall: ', min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
+        dis = min([msg.ranges[x] for x in range(-30, 30)])
 
+        min_dist = 0.14 # half robot
+        if dis > min_dist:
+            self.vel(10, 0)
+        else:
+            self.vel(0, 0)
 def main(args=None):
     rclpy.init(args=args)
 
     tb3 = Tb3()
     print('waiting for messages...')
+
 
     try:
         rclpy.spin(tb3)  # Execute tb3 node
