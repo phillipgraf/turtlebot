@@ -1,3 +1,5 @@
+import time
+
 import rclpy  # ROS client library
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -42,12 +44,13 @@ class Tb3(Node):
     def scan_callback(self, msg):
         """ is run whenever a LaserScan msg is received
         """
-        print()
-        print('Distances:')
-        print('⬆️ :', msg.ranges[0])
-        print('⬇️ :', msg.ranges[180])
-        print('⬅️ :', msg.ranges[90])
-        print('➡️ :', msg.ranges[-90])
+        # print()
+        # print('Distances:')
+        print('Up:', msg.ranges[0])
+        print('Down:', msg.ranges[180])
+        print('min -90 90:', min([msg.ranges[x] for x in range(-90, 90)]))
+        print('min 90 -90:', min([msg.ranges[x] for x in range(90, 270)]))
+        print('Minimal distance: ', min([msg.ranges[x] for x in range(-90, 90)]) + min([msg.ranges[x] for x in range(90, 270)]), '\n\n')
 
 
 def main(args=None):
