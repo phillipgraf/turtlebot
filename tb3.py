@@ -52,7 +52,7 @@ class Tb3(Node):
 
         min_dist = 0.14 # half robot
         if dis > min_dist:
-            self.vel(50, 0)
+            self.vel(20, 0)
         else:
             self.vel(0, 0)
 def main(args=None):
