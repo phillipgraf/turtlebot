@@ -1,3 +1,7 @@
+import numpy as np
+import cv2
+
+
 def stop(tb3: object):
     """
     Stop the bot set velocity and rotation to 0.
@@ -50,12 +54,12 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
     """
     Search for a object with the given laser in the specifiy scan_range.
 
-    :param scan_range_right:
-    :param scan_range_left:
+    :param scan_range_right:int Distance to detection at the right side.
+    :param scan_range_left:int Distance to detection at the left side.
+    :param scan_range_front:int Distance to detection at the front side.
+    :param scan_range_back:int Distance to detection at the back side.
     :param tb3: Bot object.
-    :param laser:
-    :param scan_range_front:
-    :param scan_range_back:
+    :param laser: Array of all laser data.
 
     # 60 - 120 right side
     # 150 -210 behind
@@ -97,3 +101,27 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
         else:
             print("No Object in left.")
 
+def detect_red(tb3):
+    """
+    Detect the color red of an object in the front between the rgb ranges:
+    lower: 0, 0, 120
+    upper: 10, 10, 130
+
+    Set color to "red".  If no red empty string "".
+
+    :param tb3: Bot object
+    """
+    lower_red = np.array([0, 0, 120], np.uint8)
+    upper_red = np.array([10, 10, 130], np.uint8)
+    mask = cv2.inRange(tb3.image, lower_red, upper_red)
+    if (mask == 255).sum() > 1:
+        tb3.color = "red"
+        print("Color detected: RED")
+    else:
+        print("Color detected: NONE")
+        tb3.color = ""
+
+def start_video(tb3):
+    cv2.imshow("Video", tb3.image)
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        cv2.destroyAllWindows()
