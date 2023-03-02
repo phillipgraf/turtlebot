@@ -50,6 +50,12 @@ def rotate(tb3: object, rotation_velocity: int):
     print("Bot is rotating to the left" if rotation_velocity > 0 else "Bot is rotating to the right side")
 
 
+def round_detection(tb3: object, laser, detection_radius):
+    if all(detection_radius >= a for a in laser):
+        tb3.state = "object_front"
+        object_position = "front"
+        print("Attention! Object at {}.".format(object_position))
+
 def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, scan_range_left=0, scan_range_right=0):
     """
     Search for a object with the given laser in the specifiy scan_range.
@@ -71,37 +77,42 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
 
     if tb3.front_search:
         if scan_range_front >= laser[0]:
-            tb3.state = "object_front"
+            tb3.object_front = True
             object_position = "front"
             print("Attention! Object at {}.".format(object_position))
         else:
+            tb3.object_front = False
             print("No Object in front.")
 
     elif tb3.back_search:
         if scan_range_back >= laser[180]:
-            tb3.state = "object_back"
+            tb3.object_back = True
             object_position = "back"
             print("Attention! Object at {}.".format(object_position))
         else:
+            tb3.object_back = False
             print("No Object in behind.")
 
     elif tb3.right_search:
         if scan_range_right >= laser[-90]:
-            tb3.state = "object_right"
+            tb3.object_right = True
             object_position = "right"
             print("Attention! Object at {}.".format(object_position))
         else:
+            tb3.object_right = False
             print("No Object in right.")
 
     elif tb3.left_search:
         if scan_range_left >= laser[90]:
-            tb3.state = "object_left"
+            tb3.object_left = True
             object_position = "left"
             print("Attention! Object at {}.".format(object_position))
         else:
+            tb3.object_left = False
             print("No Object in left.")
 
-def detect_red(tb3):
+
+def detect_red(tb3: object):
     """
     Detect the color red of an object in the front between the rgb ranges:
     lower: 0, 0, 120
@@ -121,7 +132,13 @@ def detect_red(tb3):
         print("Color detected: NONE")
         tb3.color = ""
 
-def start_video(tb3):
+
+def start_video(tb3: object):
+    """
+    Show a video of the camera view.
+    :param tb3: Bot object.
+    """
     cv2.imshow("Video", tb3.image)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
+

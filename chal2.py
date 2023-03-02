@@ -26,12 +26,17 @@ class Tb3(Node):
             'scan',
             self.scan_callback,  # function to run upon message arrival
             qos_profile_sensor_data)  # allows packet loss
+
         self.state = 0
         self.go = True
         self.front_search = True
         self.back_search = False
         self.right_search = False
         self.left_search = False
+        self.object_front = False
+        self.object_back = False
+        self.object_left = False
+        self.object_right = False
         self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
@@ -81,13 +86,13 @@ class Tb3(Node):
             drive(self, 30)
             self.go = False
 
-        if self.state == "object_front":
+        if self.object_front:
             self.counter += 1
             stop(self)
             self.right_search = True
             rotate(self, 10)
 
-        if self.state == "object_right":
+        if self.object_right:
             drive(self, 15)
             self.front_search = True
             self.right_search = False
