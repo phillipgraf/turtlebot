@@ -11,6 +11,7 @@ from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
 from utils.tb3_motion import *
 from transforms3d.euler import quat2euler
+import math
 
 # states
 # 0: normal
@@ -40,6 +41,7 @@ class Tb3(Node):
         self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
+        self.angel_coefficient = 0.025
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
         """ publishes linear and angular velocities in percent
@@ -62,13 +64,16 @@ class Tb3(Node):
         orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
         print("Postion", pos)
         print("Orientation", orient)
+
+        print(math.radians(180))
+
         if self.go:
             drive(self, 20)
             self.go = False
         if pos.y > 0.80:
             stop(self)
-            rotate(self, 20)
-        if orient[0] > 3.1:
+            rotate(self, 10)
+        if orient[0] > (math.radians(180) - self.angel_coefficient):
             stop(self)
             drive(self, 20)
         if pos.x < 0.15:
