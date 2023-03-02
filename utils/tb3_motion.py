@@ -14,6 +14,10 @@ def stop(tb3: object):
     tb3.back_search = False
     tb3.right_search = False
     tb3.left_search = False
+    tb3.object_front = False
+    tb3.object_back = False
+    tb3.object_left = False
+    tb3.object_right = False
     print("Bot stopped")
     tb3.state = "stop"
 
@@ -84,7 +88,7 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
             tb3.object_front = False
             print("No Object in front.")
 
-    elif tb3.back_search:
+    if tb3.back_search:
         if scan_range_back >= laser[180]:
             tb3.object_back = True
             object_position = "back"
@@ -93,7 +97,7 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
             tb3.object_back = False
             print("No Object in behind.")
 
-    elif tb3.right_search:
+    if tb3.right_search:
         if scan_range_right >= laser[-90]:
             tb3.object_right = True
             object_position = "right"
@@ -102,7 +106,7 @@ def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, sca
             tb3.object_right = False
             print("No Object in right.")
 
-    elif tb3.left_search:
+    if tb3.left_search:
         if scan_range_left >= laser[90]:
             tb3.object_left = True
             object_position = "left"
