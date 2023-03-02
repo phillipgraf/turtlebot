@@ -24,6 +24,7 @@ class Tb3(Node):
     def __init__(self):
         super().__init__('tb3')
 
+
         self.cmd_vel_pub = self.create_publisher(
             Twist,  # message type
             'cmd_vel',  # topic name
@@ -53,14 +54,24 @@ class Tb3(Node):
         # allows packet loss
         self.state = 0
         self.go = True
+        self.rot = False
         self.front_search = True
-        self.back_search = False
-        self.right_search = False
-        self.left_search = False
+        self.back_search = True
+        self.right_search = True
+        self.left_search = True
+        self.object_front = False
+        self.object_back = False
+        self.object_left = False
+        self.object_right = False
         self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
         self.image = None
+        #TODO Add orientations
+        self.orient_west = 180
+        self.orient_back = -90
+        self.VIEW = "up"
+        self.rotate_direction = None
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
         """ publishes linear and angular velocities in percent
@@ -78,37 +89,93 @@ class Tb3(Node):
         self.lin_vel_percent = lin_vel_percent
 
     def img_callback(self, msg):
-
-        try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        except CvBridgeError as e:
-            print(e)
-
-        self.image_received = True
-        self.image = cv_image
-
-        detect_red(self)
-        start_video(self)
+        pass
+        # try:
+        #     cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        # except CvBridgeError as e:
+        #     print(e)
+        #
+        # self.image_received = True
+        # self.image = cv_image
+        #
+        # detect_red(self)
+        # start_video(self)
 
     def odom_callback(self, msg):
-        pass
-        #     #print("State", msg)
-        #     pos = msg.pose.pose.position
-        #     orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
-        #     print("Position", pos)
-        #     print("Orientation", orient)
-        #
-        #     if self.go:
-        #         drive(self, 20)
-        #         self.go = False
-        #     if pos.y > 0.80:
-        #         stop(self)
-        #         rotate(self, 20)
-        #     if orient[0] > 3.1:
-        #         stop(self)
-        #         drive(self, 20)
-        #     if pos.x < 0.15:
-        #         stop(self)
+        pos = msg.pose.pose.position
+        orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
+        if self.go:
+            drive(self, 20)
+            self.go = False
+
+        if self.rot:
+            if self.VIEW == "north":
+                rotate(self, self.rotate_direction)
+                if self.rotate_direction < 0:
+                    if orient[0] > rad(self.orient_west):
+                    self.VIEW = "west"
+                elif self.rotate_direction > 0:
+                    self.VIEW = "east"
+                else:
+                    return
+
+            elif self.VIEW == "west":
+                rotate(self, self.rotate_direction)
+                if self.rotate_direction < 0:
+                    self.VIEW = "south"
+                elif self.rotate_direction > 0:
+                    self.VIEW = "north"
+                else:
+                    return
+
+            elif self.VIEW == "south":
+                rotate(self, self.rotate_direction)
+                if self.rotate_direction < 0:
+                    self.VIEW = "east"
+                elif self.rotate_direction > 0:
+                    self.VIEW = "west"
+                else:
+                    return
+
+            elif self.VIEW == "east":
+                rotate(self, self.rotate_direction)
+                if self.rotate_direction < 0:
+                    self.VIEW = "north"
+                elif self.rotate_direction > 0:
+                    self.VIEW = "south"
+                else:
+                    return
+
+        if self.VIEW == "west":
+            rotate(self, self.rotate_direction)
+
+            #print("RAD: ", rad(self.orient_back)
+            print("Postion", pos)
+            print("Orientation", orient)
+
+        elif orient[0] == rad(self.orient_left) and orient[0] > rad(self.orient_back):
+            print("Orientupdate: ", self.orient_back)
+            start_search(self)
+            drive(self, 20)
+            self.rot = False
+
+        if self.object_front and self.object_left:
+            stop(self)
+            self.rot = True
+        elif self.object_front and self.object_right:
+            stop(self)
+            self.rot = True
+        elif self.object_front:
+            stop(self)
+            self.rot = True
+            self.rotate_direction = 10
+        elif self.object_right:
+            stop_nosearch(self)
+            drive(self, 20)
+        elif self.object_left:
+            stop_nosearch(self)
+            drive(self, 20)
+
 
     def scan_callback(self, msg):
         """
@@ -120,39 +187,15 @@ class Tb3(Node):
         # 240 - 300 left
         # -30 - 30 front
 
-        print('state: ', self.state)
-        print('\nmin Distance to front object:', min([msg.ranges[x] for x in range(-90, 90)]))
-        print('min Distance to back object:', msg.ranges[180])
-        print('Minimal distance front wall to back wall: ',
-              min([msg.ranges[x] for x in range(-30, 30)]) + min([msg.ranges[x] for x in range(150, 210)]))
-        print('Minimal distance left wall to right wall: ',
-              min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
-
-        min_dist_front = 0.25  # half robot
-        min_dist_back = 0.17
-        min_dist_left = 0.17
-        min_dist_right = 0.16
+        min_dist_front = 0.32
+        min_dist_back = 0.32
+        min_dist_left = 0.32
+        min_dist_right = 0.32
 
         search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
                       scan_range_left=min_dist_left, scan_range_right=min_dist_right)
 
-        if self.go:
-            drive(self, 30)
-            self.go = False
 
-        if self.state == "object_front":
-            self.counter += 1
-            stop(self)
-            self.right_search = True
-            rotate(self, 10)
-
-        if self.state == "object_right":
-            drive(self, 15)
-            self.front_search = True
-            self.right_search = False
-
-        if self.counter >= 2:
-            stop(self)
 def main(args=None):
     rclpy.init(args=args)
 

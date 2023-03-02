@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import cv2
 
@@ -10,10 +12,38 @@ def stop(tb3: object):
     Set state to "stop".
     """
     tb3.vel(0, 0)
+    tb3.object_front = False
+    tb3.object_back = False
+    tb3.object_left = False
+    tb3.object_right = False
+
     tb3.front_search = False
     tb3.back_search = False
     tb3.right_search = False
     tb3.left_search = False
+    print("Bot stopped")
+    tb3.state = "stop"
+
+
+def start_search(tb3):
+    """
+    Start search in all directions
+    :param tb3: bot object
+    """
+    tb3.front_search = True
+    tb3.back_search = True
+    tb3.right_search = True
+    tb3.left_search = True
+
+
+
+def stop_nosearch(tb3: object):
+    """
+    Stop the bot set velocity and rotation to 0.
+
+    Set state to "stop".
+    """
+    tb3.vel(0, 0)
     tb3.object_front = False
     tb3.object_back = False
     tb3.object_left = False
@@ -54,11 +84,14 @@ def rotate(tb3: object, rotation_velocity: int):
     print("Bot is rotating to the left" if rotation_velocity > 0 else "Bot is rotating to the right side")
 
 
-def round_detection(tb3: object, laser, detection_radius):
-    if all(detection_radius >= a for a in laser):
-        tb3.state = "object_front"
-        object_position = "front"
-        print("Attention! Object at {}.".format(object_position))
+def rad(deg):
+    """
+    Convert degree to radians
+    :param deg: degree value
+    :return: converted radian
+    """
+    return math.radians(deg) - 0.05
+
 
 def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, scan_range_left=0, scan_range_right=0):
     """
@@ -145,4 +178,3 @@ def start_video(tb3: object):
     cv2.imshow("Video", tb3.image)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
-

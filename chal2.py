@@ -93,7 +93,7 @@ class Tb3(Node):
             rotate(self, 10)
 
         if self.object_right:
-            drive(self, 15)
+            drive(self, 30)
             self.front_search = True
             self.right_search = False
 
