@@ -12,17 +12,6 @@ def stop(tb3: object):
     Set state to "stop".
     """
     tb3.vel(0, 0)
-    tb3.object_front = False
-    tb3.object_back = False
-    tb3.object_left = False
-    tb3.object_right = False
-
-    tb3.front_search = False
-    tb3.back_search = False
-    tb3.right_search = False
-    tb3.left_search = False
-    print("Bot stopped")
-    tb3.state = "stop"
 
 
 def start_search(tb3):
@@ -34,22 +23,6 @@ def start_search(tb3):
     tb3.back_search = True
     tb3.right_search = True
     tb3.left_search = True
-
-
-
-def stop_nosearch(tb3: object):
-    """
-    Stop the bot set velocity and rotation to 0.
-
-    Set state to "stop".
-    """
-    tb3.vel(0, 0)
-    tb3.object_front = False
-    tb3.object_back = False
-    tb3.object_left = False
-    tb3.object_right = False
-    print("Bot stopped")
-    tb3.state = "stop"
 
 
 def drive(tb3: object, velocity: int):
@@ -64,8 +37,8 @@ def drive(tb3: object, velocity: int):
         tb3.stop()
         return
     tb3.vel(velocity, 0)
-    tb3.state = "drive"
-    print("Bot driving forward" if velocity > 0 else "Bot driving backwards")
+    # tb3.state = "drive"
+    # print("Bot driving forward" if velocity > 0 else "Bot driving backwards")
 
 
 def rotate(tb3: object, rotation_velocity: int):
@@ -80,8 +53,8 @@ def rotate(tb3: object, rotation_velocity: int):
         tb3.stop()
         return
     tb3.vel(0, rotation_velocity)
-    tb3.state = "rotate"
-    print("Bot is rotating to the left" if rotation_velocity > 0 else "Bot is rotating to the right side")
+    # tb3.state = "rotate"
+    # print("Bot is rotating to the left" if rotation_velocity > 0 else "Bot is rotating to the right side")
 
 
 def rad(deg):
@@ -93,7 +66,7 @@ def rad(deg):
     return math.radians(deg) - 0.05
 
 
-def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, scan_range_left=0, scan_range_right=0):
+def search_object(tb3: object, laser, scan_range_front=0.0, scan_range_back=0.0, scan_range_left=0.0, scan_range_right=0.0):
     """
     Search for a object with the given laser in the specifiy scan_range.
 
@@ -164,9 +137,9 @@ def detect_red(tb3: object):
     mask = cv2.inRange(tb3.image, lower_red, upper_red)
     if (mask == 255).sum() > 1:
         tb3.color = "red"
-        print("Color detected: RED")
+        # print("Color detected: RED")
     else:
-        print("Color detected: NONE")
+        # print("Color detected: NONE")
         tb3.color = ""
 
 
