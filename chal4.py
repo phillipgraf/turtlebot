@@ -94,7 +94,8 @@ class Tb3(Node):
         self.image = cv_image
 
         start_video(self)
-        detect_red(self)
+        if not self.rot:
+            detect_red(self)
 
 
     def odom_callback(self, msg):
@@ -113,28 +114,31 @@ class Tb3(Node):
 
         if self.rot:
             rotate_90_degree(self, self.rotate_direction, orient)
-
-        if self.color == "red":
-            stop(self)
-
-        if self.object_front and self.object_left:
-            stop(self)
-            self.rot = True
-            self.rotate_direction = -10
-        elif self.object_front and self.object_right:
-            stop(self)
-            self.rot = True
-            self.rotate_direction = 10
-        elif self.object_front:
-            stop(self)
-            self.rot = True
-            self.rotate_direction = - 10
-        elif self.object_right:
-            stop_nosearch(self)
-            drive(self, 20)
-        elif self.object_left:
-            stop_nosearch(self)
-            drive(self, 20)
+        else:
+            if self.color == "red":
+                if self.object_front:
+                    stop(self)
+                else:
+                    drive(self, 20)
+            else:
+                if self.object_front and self.object_left:
+                    stop(self)
+                    self.rot = True
+                    self.rotate_direction = -10
+                elif self.object_front and self.object_right:
+                    stop(self)
+                    self.rot = True
+                    self.rotate_direction = 10
+                elif self.object_front:
+                    stop(self)
+                    self.rot = True
+                    self.rotate_direction = 10
+                elif self.object_right:
+                    stop(self)
+                    drive(self, 20)
+                elif self.object_left:
+                    stop(self)
+                    drive(self, 20)
 
     def scan_callback(self, msg):
         """

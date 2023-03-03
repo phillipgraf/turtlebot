@@ -12,15 +12,6 @@ def stop(tb3: object):
     Set state to "stop".
     """
     tb3.vel(0, 0)
-    tb3.object_front = False
-    tb3.object_back = False
-    tb3.object_left = False
-    tb3.object_right = False
-
-    tb3.front_search = False
-    tb3.back_search = False
-    tb3.right_search = False
-    tb3.left_search = False
 
     tb3.rot = False
     print("Bot stopped")
@@ -207,6 +198,7 @@ def get_and_set_view(tb3: object, orient, angel_coefficient=0.5):
 def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
     """
     Rotate to the bot to the given point of the compass. Currently only "north", "west", "south" and "east" implemented.
+    Also get_and_set the view of the bot.
     
     Points of the compass:
     - "north"
