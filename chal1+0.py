@@ -31,6 +31,7 @@ class Tb3(Node):
         self.left_search = False
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
+        self.object_front = False
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
         """ publishes linear and angular velocities in percent
@@ -58,13 +59,14 @@ class Tb3(Node):
 
         min_dist_front = 0.14 # half robot
         search_object(self, laser=msg.ranges, scan_range_front=min_dist_front)
+        start_search(self)
 
         if self.go:
             drive(self, 15)
             self.go = False
-
-        if self.state == "object_front":
-            stop(self)
+        else:
+            if self.object_front:
+                stop(self)
 
 def main(args=None):
     rclpy.init(args=args)
