@@ -24,7 +24,6 @@ class Tb3(Node):
     def __init__(self):
         super().__init__('tb3')
 
-
         self.cmd_vel_pub = self.create_publisher(
             Twist,  # message type
             'cmd_vel',  # topic name
@@ -50,7 +49,6 @@ class Tb3(Node):
             self.img_callback,
             qos_profile_sensor_data)
 
-
         # allows packet loss
         self.state = 0
         self.go = True
@@ -67,10 +65,8 @@ class Tb3(Node):
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
         self.image = None
-        #TODO Add orientations
-        self.orient_west = 180
-        self.orient_back = -90
-        self.VIEW = "up"
+        self.VIEW = "north"
+        self.color = ""
         self.rotate_direction = None
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
@@ -89,93 +85,56 @@ class Tb3(Node):
         self.lin_vel_percent = lin_vel_percent
 
     def img_callback(self, msg):
-        pass
-        # try:
-        #     cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        # except CvBridgeError as e:
-        #     print(e)
-        #
-        # self.image_received = True
-        # self.image = cv_image
-        #
-        # detect_red(self)
-        # start_video(self)
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        except CvBridgeError as e:
+            print(e)
+
+        self.image_received = True
+        self.image = cv_image
+
+        start_video(self)
+        detect_red(self)
+
 
     def odom_callback(self, msg):
         pos = msg.pose.pose.position
-        orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
+        orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
+                             msg.pose.pose.orientation.w])
+
+        # print("Postion", pos)
+        print("Robot view:", self.VIEW)
+
+
         if self.go:
+            get_and_set_view(self, orient)
             drive(self, 20)
             self.go = False
 
         if self.rot:
-            if self.VIEW == "north":
-                rotate(self, self.rotate_direction)
-                if self.rotate_direction < 0:
-                    if orient[0] > rad(self.orient_west):
-                    self.VIEW = "west"
-                elif self.rotate_direction > 0:
-                    self.VIEW = "east"
-                else:
-                    return
+            rotate_90_degree(self, self.rotate_direction, orient)
 
-            elif self.VIEW == "west":
-                rotate(self, self.rotate_direction)
-                if self.rotate_direction < 0:
-                    self.VIEW = "south"
-                elif self.rotate_direction > 0:
-                    self.VIEW = "north"
-                else:
-                    return
-
-            elif self.VIEW == "south":
-                rotate(self, self.rotate_direction)
-                if self.rotate_direction < 0:
-                    self.VIEW = "east"
-                elif self.rotate_direction > 0:
-                    self.VIEW = "west"
-                else:
-                    return
-
-            elif self.VIEW == "east":
-                rotate(self, self.rotate_direction)
-                if self.rotate_direction < 0:
-                    self.VIEW = "north"
-                elif self.rotate_direction > 0:
-                    self.VIEW = "south"
-                else:
-                    return
-
-        if self.VIEW == "west":
-            rotate(self, self.rotate_direction)
-
-            #print("RAD: ", rad(self.orient_back)
-            print("Postion", pos)
-            print("Orientation", orient)
-
-        elif orient[0] == rad(self.orient_left) and orient[0] > rad(self.orient_back):
-            print("Orientupdate: ", self.orient_back)
-            start_search(self)
-            drive(self, 20)
-            self.rot = False
+        if self.color == "red":
+            stop(self)
 
         if self.object_front and self.object_left:
             stop(self)
             self.rot = True
+            self.rotate_direction = -10
         elif self.object_front and self.object_right:
             stop(self)
             self.rot = True
+            self.rotate_direction = 10
         elif self.object_front:
             stop(self)
             self.rot = True
-            self.rotate_direction = 10
+            self.rotate_direction = - 10
         elif self.object_right:
             stop_nosearch(self)
             drive(self, 20)
         elif self.object_left:
             stop_nosearch(self)
             drive(self, 20)
-
 
     def scan_callback(self, msg):
         """
@@ -212,6 +171,7 @@ def main(args=None):
     rclpy.shutdown()
 
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     main()

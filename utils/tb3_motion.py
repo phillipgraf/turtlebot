@@ -21,6 +21,8 @@ def stop(tb3: object):
     tb3.back_search = False
     tb3.right_search = False
     tb3.left_search = False
+
+    tb3.rot = False
     print("Bot stopped")
     tb3.state = "stop"
 
@@ -90,7 +92,7 @@ def rad(deg):
     :param deg: degree value
     :return: converted radian
     """
-    return math.radians(deg) - 0.05
+    return math.radians(deg)
 
 
 def search_object(tb3: object, laser, scan_range_front=0, scan_range_back=0, scan_range_left=0, scan_range_right=0):
@@ -178,3 +180,109 @@ def start_video(tb3: object):
     cv2.imshow("Video", tb3.image)
     if cv2.waitKey(10) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
+
+def get_and_set_view(tb3: object, orient, angel_coefficient=0.5):
+    """
+    Get the view of the bot.
+
+    #orient_north = 90
+    #orient_west = 180
+    #orient_east = 0
+    #orient_south = -90
+
+    And set VIEW to the value
+    :param tb3:
+    """
+    #min(orient[0], -orient[0])
+
+    if rad(90 - angel_coefficient) < orient[0] < rad(90 + angel_coefficient):
+        tb3.VIEW = "north"
+    elif rad(180 - angel_coefficient) < orient[0] < rad(180 + angel_coefficient):
+        tb3.VIEW = "west"
+    elif rad(0 - angel_coefficient) < orient[0] < rad(0 + angel_coefficient):
+        tb3.VIEW = "east"
+    elif rad(-90 - angel_coefficient) < orient[0] < rad(-90 + angel_coefficient):
+        tb3.VIEW = "south"
+
+def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
+    """
+    Rotate to the bot to the given point of the compass. Currently only "north", "west", "south" and "east" implemented.
+    
+    Points of the compass:
+    - "north"
+    - "west"
+    - "south"
+    - "east"
+    
+    :param tb3: Bot object.
+    :param direction_to_move: Positiv integer for left
+                              Negativ integer for right
+    :param orient_of_bot:  Current orientation state of the bot
+    """
+    if tb3.VIEW == "north":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        # direction positiv rotate to the left
+        if direction_to_move > 0:
+            print("Move to west")
+            if tb3.VIEW == "west":
+                stop(tb3)
+                start_search(tb3)
+        # direction negative rotate to right
+        elif direction_to_move < 0:
+            print("Move to east")
+            if tb3.VIEW == "east":
+                stop(tb3)
+                start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "west":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if direction_to_move > 0:
+            print("Move to south")
+            # if min(orient[0], -orient[0]) > rad(tb3.orient_south):
+            if tb3.VIEW == "south":
+                stop(tb3)
+                start_search(tb3)
+        elif direction_to_move < 0:
+            print("Move to north")
+            if tb3.VIEW == "north":
+                stop(tb3)
+                start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "south":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if direction_to_move > 0:
+            print("Move to east")
+            if tb3.VIEW == "east":
+                stop(tb3)
+                start_search(tb3)
+        elif direction_to_move < 0:
+            print("Move to west")
+            if tb3.VIEW == "west":
+                stop(tb3)
+                start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "east":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if direction_to_move > 0:
+            print("Move to north")
+            if tb3.VIEW == "north":
+                stop(tb3)
+                start_search(tb3)
+        elif direction_to_move < 0:
+            print("Move to south")
+            if tb3.VIEW == "south":
+                stop(tb3)
+                start_search(tb3)
+        else:
+            return
+
