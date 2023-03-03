@@ -82,13 +82,11 @@ class Tb3(Node):
                 self.lin_vel_percent = lin_vel_percent
 
         def img_callback(self, msg):
-                return
                 try:
                         cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
                         self.image = cv_image
                         self.image_received = True
                         detect_red(self)
-                        # start_video(self)
                 except CvBridgeError as e:
                         print(e)
                 self.image_received = False
@@ -97,8 +95,8 @@ class Tb3(Node):
                 self.pos = msg.pose.pose.position
                 self.orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
 
-                if self.once:
-                        self.rotate_degree(60, clockwise=False)
+                # if self.once:
+                #         self.rotate_degree(60, clockwise=False)
 
         def rotate_degree(self, deg, clockwise = False):
                 if self.pre_rotate == 9999:
@@ -124,57 +122,11 @@ class Tb3(Node):
                 # min_dist_back = 0.32
                 # min_dist_left = 0.32
                 # min_dist_right = 0.32
-
-                self.beams = msg.ranges
-                self.diagnostics()
-                self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if self.beams[x] > 1]
-                self.get_grouped_beams()
-                
-        def get_grouped_beams(self):
-                if len(self.op_beams) == 0:
-                        return
-                self.groups = [[self.op_beams[0][0]]]
-                idx = self.op_beams[0][0]
-                for x in self.op_beams[1:]:
-                        id = x[0]
-                        ab = abs(idx - id)
-                        if ab == 1:
-                                idx = id
-                                self.groups[-1].append(id)
-                        else:
-                                idx = id
-                                self.groups.append([id])
-                if len(self.groups) >= 2 and self.groups[0][0] == 0 and self.groups[-1][-1] == 359:
-                        self.groups = [self.groups[-1] + self.groups[0]] + self.groups[1:-1]
+                diagnostics(self)
+                get_grouped_beams(self, msg.ranges)
 
 
-        def diagnostics(self):
-                if self.pos != None and self.orient != None:
-                        try:
-                                os.system("clear")
-                                print(f"X{' ' * len(str(self.pos.x))}\tY{' ' * len(str(self.pos.y))}\tZ{' ' * len(str(self.pos.z))}\t|\tRotX{' ' * len(str(self.orient[0]))}\tRotY{' ' * (len(str(self.orient[1]))-3)}\tRotZ")
-                                print(f"{self.pos.x}\t{self.pos.y}\t{self.pos.z}\t|\t{self.orient[0]}\t{self.orient[1]}\t{self.orient[2]}")
-                                print("\n")
-                                print(f"List of beam groups that extend the range of 1m")
-                                print(f"#Beams\t|\t <\t>")
-                                print(f"{'-' * 35}")
-                                for g in self.groups:
-                                        print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}")
-                                print(f"Rotation Logs (9999 is the default):\n\n")
-                                print(f"\nRadian calculations")
-                                print(f"Degree\tRadian")
-                                rads = [0, 90, 180, 60, 195, 270, 359]
-                                for r in rads:
-                                        print(f"{r}\t{rad(r)}")
-                                print(f"pre rotation value: {self.pre_rotate}")
-                                print(f"rotation goal: {self.rot_goal}")
-                        except:
-                                pass
 
-def rad(deg):
-        if deg > 180:
-                deg -= 360 
-        return math.radians(deg)
 
 
 def main(args=None):
