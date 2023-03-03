@@ -29,22 +29,6 @@ def start_search(tb3):
     tb3.left_search = True
 
 
-
-def stop_nosearch(tb3: object):
-    """
-    Stop the bot set velocity and rotation to 0.
-
-    Set state to "stop".
-    """
-    tb3.vel(0, 0)
-    tb3.object_front = False
-    tb3.object_back = False
-    tb3.object_left = False
-    tb3.object_right = False
-    print("Bot stopped")
-    tb3.state = "stop"
-
-
 def drive(tb3: object, velocity: int):
     """
     Drive the bot with given velocity.
