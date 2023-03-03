@@ -110,6 +110,7 @@ class Tb3(Node):
         if self.go:
             get_and_set_view(self, orient)
             drive(self, 20)
+            start_search(self)
             self.go = False
 
         if self.rot:
@@ -159,7 +160,6 @@ class Tb3(Node):
 
         search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
                       scan_range_left=min_dist_left, scan_range_right=min_dist_right)
-        start_search(self)
 
 
 def main(args=None):

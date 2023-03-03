@@ -28,7 +28,6 @@ def start_search(tb3):
     tb3.right_search = True
     tb3.left_search = True
 
-
 def drive(tb3: object, velocity: int):
     """
     Drive the bot with given velocity.

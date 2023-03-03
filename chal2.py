@@ -40,6 +40,7 @@ class Tb3(Node):
         self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
+        self.rot = False
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
         """ publishes linear and angular velocities in percent
@@ -74,31 +75,35 @@ class Tb3(Node):
         print('Minimal distance left wall to right wall: ',
               min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
 
-        min_dist_front = 0.25  # half robot
+        min_dist_front = 0.30  # half robot
         min_dist_back = 0.17
         min_dist_left = 0.17
-        min_dist_right = 0.16
+        min_dist_right = 0.22
 
         search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
                       scan_range_left=min_dist_left, scan_range_right=min_dist_right)
 
         if self.go:
             drive(self, 30)
+            start_search(self)
             self.go = False
 
-        if self.object_front:
-            self.counter += 1
-            stop(self)
-            self.right_search = True
-            rotate(self, 10)
-
-        if self.object_right:
-            drive(self, 30)
-            self.front_search = True
-            self.right_search = False
-
-        if self.counter >= 2:
-            stop(self)
+        if self.rot:
+            if self.object_right:
+                drive(self, 30)
+                self.front_search = True
+                self.rot = False
+            else:
+                rotate(self, 10)
+        else:
+            if self.counter >= 2:
+                stop(self)
+            else:
+                if self.object_front:
+                    self.front_search = False
+                    self.counter += 1
+                    print(self.counter)
+                    self.rot = True
 
 
 def main(args=None):
