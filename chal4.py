@@ -139,6 +139,8 @@ class Tb3(Node):
                 elif self.object_left:
                     stop(self)
                     drive(self, 20)
+                else:
+                    self.go = True
 
     def scan_callback(self, msg):
         """
