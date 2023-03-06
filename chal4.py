@@ -116,7 +116,7 @@ class Tb3(Node):
 
         if self.go:
             get_and_set_view(self, orient)
-            drive(self, 0)
+            drive(self, 30)
             start_search(self)
             self.go = False
 
@@ -140,7 +140,7 @@ class Tb3(Node):
                 elif self.object_front:
                     stop(self)
                     self.rot = True
-                    self.rotate_direction = 10
+                    self.rotate_direction = 20
                 elif self.object_right:
                     stop(self)
                     drive(self, 20)
@@ -171,10 +171,6 @@ class Tb3(Node):
         get_grouped_beams(self, msg.ranges)
         print("SEARCH DEAD-END")
         check_dead_end(self, self.groups[0], msg)
-        if self.dead_end:
-            print("FOUND DEAD-END")
-        else:
-            print("NOT FOUND DEAD-END")
 
 def main(args=None):
     rclpy.init(args=args)
