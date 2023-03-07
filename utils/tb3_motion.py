@@ -48,8 +48,8 @@ def rotate_degree(tb3):
             tb3.state = 2
 
 def drive_until_wall(tb3):
-    drive(tb3)
-    if check_front_wall():
+    drive(tb3, tb3.drive_velocity)
+    if check_front_wall(tb3):
         stop(tb3)
         tb3.state = -1
 
