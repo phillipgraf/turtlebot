@@ -61,6 +61,7 @@ def stop(tb3: object):
     Set state to "stop".
     """
     vel(tb3, 0, 0)
+    tb3.rotate_direction = 0
     tb3.rot = False
 
 

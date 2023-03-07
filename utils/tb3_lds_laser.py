@@ -22,24 +22,28 @@ def search_object(tb3: object, laser):
     """
 
     if tb3.front_search:
+        tb3.max_dist_front = laser[0]
         if tb3.min_dist_front >= laser[0]:
             tb3.object_front = True
         else:
             tb3.object_front = False
 
     if tb3.back_search:
+        tb3.max_dist_back = laser[180]
         if tb3.min_dist_back >= laser[180]:
             tb3.object_back = True
         else:
             tb3.object_back = False
 
     if tb3.right_search:
+        tb3.max_dist_right = laser[-90]
         if tb3.min_dist_right >= laser[-90]:
             tb3.object_right = True
         else:
             tb3.object_right = False
 
     if tb3.left_search:
+        tb3.max_dist_left = laser[90]
         if tb3.min_dist_left >= laser[90]:
             tb3.object_left = True
         else:
