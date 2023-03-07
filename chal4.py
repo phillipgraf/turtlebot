@@ -12,6 +12,7 @@ from utils.tb3_camera import start_video, detect_red
 from utils.tb3_lds_laser import search_object, get_grouped_beams, check_dead_end
 from utils.tb3_motion import *
 from utils.tb3_logs import diagnostics
+from utils.tb3_mapping import *
 from transforms3d.euler import quat2euler
 from sensor_msgs.msg import Image
 import cv2
@@ -76,6 +77,16 @@ class Tb3(Node):
         self.min_dist_back = 0.32
         self.min_dist_left = 0.32
         self.min_dist_right = 0.32
+        self.max_dist_front = 0
+        self.max_dist_left = 0
+        self.max_dist_back = 0
+        self.max_dist_right = 0
+        self.cell = [0, 0]
+        self.cell_storage = []
+        self.cell_count = 0
+        self.known_cells = []
+        self.init_cell = True
+
 
     def img_callback(self, msg):
         try:
@@ -87,7 +98,7 @@ class Tb3(Node):
         self.image_received = True
         self.image = cv_image
 
-        # start_video(self)
+        #start_video(self)
         if not self.rot:
             detect_red(self)
 
@@ -96,9 +107,21 @@ class Tb3(Node):
         orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
                              msg.pose.pose.orientation.w])
 
+        if self.init_cell:
+            # init start cell
+            self.cell[0] = 1
+            self.cell[1] = 1
+            self.cell_storage.append(self.cell[:])
+            self.init_cell = False
+        else:
+            current_cell = get_cell(self)
+            if check_cell(self, get_cell(self)):
+                self.known_cells = self.cell_storage[:]
+                self.cell_storage.append(current_cell[:])
+
         if self.go:
             get_and_set_view(self, orient)
-            drive(self, 30)
+            drive(self, 20)
             start_search(self)
             self.go = False
 
@@ -114,15 +137,15 @@ class Tb3(Node):
                 if self.object_front and self.object_left:
                     stop(self)
                     self.rot = True
-                    self.rotate_direction = -10
+                    self.rotate_direction = -15
                 elif self.object_front and self.object_right:
                     stop(self)
                     self.rot = True
-                    self.rotate_direction = 10
+                    self.rotate_direction = 15
                 elif self.object_front:
                     stop(self)
                     self.rot = True
-                    self.rotate_direction = 20
+                    self.rotate_direction = 15
                 elif self.object_right:
                     stop(self)
                     drive(self, 20)
