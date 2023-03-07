@@ -1,3 +1,4 @@
+import os
 import time
 
 import rclpy  # ROS client library
@@ -61,49 +62,34 @@ class Tb3(Node):
         """
         is run whenever a LaserScan msg is received
         """
-        #### Degrees of laser view
-        # 60 - 120 right side
-        # 150 -210 behind
-        # 240 - 300 left
-        # -30 - 30 front
+        min_dist_front = 0.32
+        min_dist_right = 0.25
 
-        print('state: ', self.state)
-        print('\nmin Distance to front object:', min([msg.ranges[x] for x in range(-90, 90)]))
-        print('min Distance to back object:', msg.ranges[180])
-        print('Minimal distance front wall to back wall: ',
-              min([msg.ranges[x] for x in range(-30, 30)]) + min([msg.ranges[x] for x in range(150, 210)]))
-        print('Minimal distance left wall to right wall: ',
-              min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
+        os.system("clear")
+        print(f"{get_title()}")
 
-        min_dist_front = 0.30  # half robot
-        min_dist_back = 0.17
-        min_dist_left = 0.17
-        min_dist_right = 0.22
-
-        search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
-                      scan_range_left=min_dist_left, scan_range_right=min_dist_right)
-
-        if self.go:
-            drive(self, 30)
-            start_search(self)
-            self.go = False
-
-        if self.rot:
-            if self.object_right:
-                drive(self, 30)
-                self.front_search = True
-                self.rot = False
-            else:
-                rotate(self, 10)
+        if self.state == 0:
+            # Drive to wall
+            self.vel(30, 0)
+            if min_dist_front >= msg.ranges[0] > 0:
+                self.state = 1
+                self.vel(0, 0)
+        elif self.state == 1:
+            # Rotate 90 degrees
+            self.vel(0, 10)
+            if min_dist_right >= msg.ranges[-90] > 0:
+                self.state = 2
+                self.vel(0, 0)
+        elif self.state == 2:
+            # Drive to final wall
+            min_dist_front = 0.25
+            self.vel(30, 0)
+            if min_dist_front >= msg.ranges[0] > 0:
+                self.vel(0, 0)
+                self.state = 3
         else:
-            if self.counter >= 2:
-                stop(self)
-            else:
-                if self.object_front:
-                    self.front_search = False
-                    self.counter += 1
-                    print(self.counter)
-                    self.rot = True
+            pass
+
 
 
 def main(args=None):
