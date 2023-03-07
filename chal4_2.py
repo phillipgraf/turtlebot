@@ -68,7 +68,7 @@ class Tb3(Node):
 
         self.last_origin_degree = None
 
-        self.drive_velovity = 20
+        self.drive_velocity = 20
         self.rotation_velocity = 5
         self.rotation_tolerance = 0.02
         self.rotation_clockwise = False

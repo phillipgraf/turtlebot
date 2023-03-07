@@ -22,9 +22,9 @@ def vel(tb3, lin_vel_percent, ang_vel_percent=0):
 
 def rotate_dir(tb3):
     if tb3.rotation_clockwise:
-        drive(tb3, -tb3.rotation_velocity)
+        rotate(tb3, -tb3.rotation_velocity)
     else:
-        drive(tb3, tb3.rotation_velocity)
+        rotate(tb3, tb3.rotation_velocity)
 
 def in_tolerance(tb3):
     return tb3.rot_goal - tb3.rotation_tolerance <= tb3.orient[0] <= tb3.rot_goal + tb3.rotation_tolerance
