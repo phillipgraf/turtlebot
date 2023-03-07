@@ -68,6 +68,13 @@ class Tb3(Node):
         self.VIEW = "north"
         self.color = ""
         self.rotate_direction = None
+        self.pos = None
+        self.orient = [-1, -1, -1]
+        self.groups = None
+        self.new_group_1 = []
+        self.new_group_2 = []
+        self.pos = None
+        self.dead_end = False
 
     def vel(self, lin_vel_percent, ang_vel_percent=0):
         """ publishes linear and angular velocities in percent
@@ -99,7 +106,7 @@ class Tb3(Node):
 
 
     def odom_callback(self, msg):
-        pos = msg.pose.pose.position
+        self.pos = msg.pose.pose.position
         orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
                              msg.pose.pose.orientation.w])
 
@@ -109,7 +116,7 @@ class Tb3(Node):
 
         if self.go:
             get_and_set_view(self, orient)
-            drive(self, 20)
+            drive(self, 30)
             start_search(self)
             self.go = False
 
@@ -133,7 +140,7 @@ class Tb3(Node):
                 elif self.object_front:
                     stop(self)
                     self.rot = True
-                    self.rotate_direction = 10
+                    self.rotate_direction = 20
                 elif self.object_right:
                     stop(self)
                     drive(self, 20)
@@ -161,6 +168,9 @@ class Tb3(Node):
         search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
                       scan_range_left=min_dist_left, scan_range_right=min_dist_right)
 
+        get_grouped_beams(self, msg.ranges)
+        print("SEARCH DEAD-END")
+        check_dead_end(self, self.groups[0], msg)
 
 def main(args=None):
     rclpy.init(args=args)

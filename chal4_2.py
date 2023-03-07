@@ -14,6 +14,9 @@ from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
 from utils.tb3_motion import *
 from transforms3d.euler import quat2euler
+from sensor_msgs.msg import Image
+import cv2
+from cv_bridge import CvBridge, CvBridgeError
 import math
 
 
@@ -37,8 +40,19 @@ class Tb3(Node):
                                 self.scan_callback,  # function to run upon message arrival
                                 qos_profile_sensor_data)  # allows packet loss
 
+                self.bridge = CvBridge()
+                self.image_received = False
+                self.img_sub = self.create_subscription(
+                                Image,
+                                '/camera/image_raw',
+                                self.img_callback,
+                                qos_profile_sensor_data)
+
+                self.state = 0
                 self.ang_vel_percent = 0
                 self.lin_vel_percent = 0
+                self.image = None
+                self.color = ""
 
                 self.pos = None
                 self.orient = [-1, -1, -1]
@@ -89,6 +103,15 @@ class Tb3(Node):
                 self.ang_vel_percent = ang_vel_percent
                 self.lin_vel_percent = lin_vel_percent
 
+        def img_callback(self, msg):
+                try:
+                        cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+                        self.image = cv_image
+                        self.image_received = True
+                        detect_red(self)
+                except CvBridgeError as e:
+                        print(e)
+                self.image_received = False
 
         def stop(self):
                 self.vel(0, 0)
@@ -163,7 +186,7 @@ class Tb3(Node):
                                 self.state = 2
 
         def in_tolerance(self):
-                return self.rot_goal - self.rotation_tolerance <= self.orient[0] <= self.rot_goal + self.rotation_tolerance 
+                return self.rot_goal - self.rotation_tolerance <= self.orient[0] <= self.rot_goal + self.rotation_tolerance
 
         def scan_callback(self, msg):
                 """
@@ -180,7 +203,7 @@ class Tb3(Node):
                         self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if self.beams[x] > self.beam_distance]
                         self.get_grouped_beams()
                 self.diagnostics()
-                
+
         def get_grouped_beams(self):
                 if len(self.op_beams) == 0:
                         return
@@ -216,7 +239,7 @@ class Tb3(Node):
                         if len(self.groups) == 1:
                                 self.stop()
                                 self.state = 4
-                                return 
+                                return
 
         def diagnostics(self):
                 if self.pos != None and self.orient != None:
@@ -249,14 +272,13 @@ class Tb3(Node):
                                         print(f"\t{self.check_back_wall()}")
                         except Exception as e:
                                 print(e)
-                                
+
 def rad(deg):
         if deg > 180:
-                deg -= 360 
+                deg -= 360
         if deg < -180:
                 deg += 360
         return math.radians(deg)
-
 
 def main(args=None):
         rclpy.init(args=args)
@@ -271,6 +293,8 @@ def main(args=None):
 
         tb3.destroy_node()
         rclpy.shutdown()
+
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
         main()
