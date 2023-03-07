@@ -6,20 +6,18 @@ from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Point
-from geometry_msgs.msg import Quaternion
 from geometry_msgs.msg import Twist
+
+from utils.tb3_camera import start_video, detect_red
+from utils.tb3_lds_laser import search_object, get_grouped_beams, check_dead_end
 from utils.tb3_motion import *
+from utils.tb3_logs import diagnostics
 from transforms3d.euler import quat2euler
 from sensor_msgs.msg import Image
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
-import math
 
 
-# states
-# 0: normal
-# 1: on the front wall
 class Tb3(Node):
     def __init__(self):
         super().__init__('tb3')
@@ -49,8 +47,7 @@ class Tb3(Node):
             self.img_callback,
             qos_profile_sensor_data)
 
-        # allows packet loss
-        self.state = 0
+        self.state = -4
         self.go = True
         self.rot = False
         self.front_search = True
@@ -75,44 +72,29 @@ class Tb3(Node):
         self.new_group_2 = []
         self.pos = None
         self.dead_end = False
-
-    def vel(self, lin_vel_percent, ang_vel_percent=0):
-        """ publishes linear and angular velocities in percent
-        """
-        # for TB3 Waffle
-        MAX_LIN_VEL = 0.26  # m/s
-        MAX_ANG_VEL = 1.82  # rad/s
-
-        cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = MAX_LIN_VEL * lin_vel_percent / 100
-        cmd_vel_msg.angular.z = MAX_ANG_VEL * ang_vel_percent / 100
-
-        self.cmd_vel_pub.publish(cmd_vel_msg)
-        self.ang_vel_percent = ang_vel_percent
-        self.lin_vel_percent = lin_vel_percent
+        self.min_dist_front = 0.32
+        self.min_dist_back = 0.32
+        self.min_dist_left = 0.32
+        self.min_dist_right = 0.32
 
     def img_callback(self, msg):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
+            return
 
         self.image_received = True
         self.image = cv_image
 
-        start_video(self)
+        # start_video(self)
         if not self.rot:
             detect_red(self)
-
 
     def odom_callback(self, msg):
         self.pos = msg.pose.pose.position
         orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
                              msg.pose.pose.orientation.w])
-
-        # print("Postion", pos)
-        print("Robot view:", self.VIEW)
-
 
         if self.go:
             get_and_set_view(self, orient)
@@ -149,28 +131,20 @@ class Tb3(Node):
                     drive(self, 20)
                 else:
                     self.go = True
+        diagnostics(self)
 
     def scan_callback(self, msg):
         """
         is run whenever a LaserScan msg is received
         """
-        #### Degrees of laser view
+        # Degrees of laser view
         # 60 - 120 right side
         # 150 -210 behind
         # 240 - 300 left
         # -30 - 30 front
 
-        min_dist_front = 0.32
-        min_dist_back = 0.32
-        min_dist_left = 0.32
-        min_dist_right = 0.32
+        search_object(self, laser=msg.ranges)
 
-        search_object(self, laser=msg.ranges, scan_range_front=min_dist_front, scan_range_back=min_dist_back,
-                      scan_range_left=min_dist_left, scan_range_right=min_dist_right)
-
-        get_grouped_beams(self, msg.ranges)
-        print("SEARCH DEAD-END")
-        check_dead_end(self, self.groups[0], msg)
 
 def main(args=None):
     rclpy.init(args=args)

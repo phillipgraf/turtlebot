@@ -7,7 +7,9 @@ from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-from utils.tb3_motion import *
+
+from utils.tb3_logs import diagnostics
+from utils.tb3_motion import drive, rotate, stop
 
 
 # states
@@ -28,6 +30,8 @@ class Tb3(Node):
             self.scan_callback,  # function to run upon message arrival
             qos_profile_sensor_data)  # allows packet loss
 
+        self.pos = None
+        self.orient = [-1, -1, -1]
         self.state = 0
         self.go = True
         self.front_search = True
@@ -38,59 +42,38 @@ class Tb3(Node):
         self.object_back = False
         self.object_left = False
         self.object_right = False
-        self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
-        self.rot = False
-
-    def vel(self, lin_vel_percent, ang_vel_percent=0):
-        """ publishes linear and angular velocities in percent
-        """
-        # for TB3 Waffle
-        MAX_LIN_VEL = 0.26  # m/s
-        MAX_ANG_VEL = 1.82  # rad/s
-
-        cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = MAX_LIN_VEL * lin_vel_percent / 100
-        cmd_vel_msg.angular.z = MAX_ANG_VEL * ang_vel_percent / 100
-
-        self.cmd_vel_pub.publish(cmd_vel_msg)
-        self.ang_vel_percent = ang_vel_percent
-        self.lin_vel_percent = lin_vel_percent
 
     def scan_callback(self, msg):
         """
         is run whenever a LaserScan msg is received
         """
         min_dist_front = 0.32
-        min_dist_right = 0.25
-
-        os.system("clear")
-        print(f"{get_title()}")
+        min_dist_right = 0.255
 
         if self.state == 0:
             # Drive to wall
-            self.vel(30, 0)
+            drive(self, 30)
             if min_dist_front >= msg.ranges[0] > 0:
                 self.state = 1
-                self.vel(0, 0)
+                stop(self)
         elif self.state == 1:
             # Rotate 90 degrees
-            self.vel(0, 10)
+            rotate(self, 10)
             if min_dist_right >= msg.ranges[-90] > 0:
                 self.state = 2
-                self.vel(0, 0)
+                stop(self)
         elif self.state == 2:
             # Drive to final wall
             min_dist_front = 0.25
-            self.vel(30, 0)
+            drive(self, 30)
             if min_dist_front >= msg.ranges[0] > 0:
-                self.vel(0, 0)
+                stop(self)
                 self.state = 3
         else:
             pass
-
-
+        diagnostics(self)
 
 def main(args=None):
     rclpy.init(args=args)

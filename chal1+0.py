@@ -6,7 +6,10 @@ from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-from utils.tb3_motion import *
+
+from utils.tb3_lds_laser import search_object
+from utils.tb3_motion import start_search, drive, stop
+from utils.tb3_logs import diagnostics
 
 
 class Tb3(Node):
@@ -24,6 +27,8 @@ class Tb3(Node):
                 self.scan_callback,  # function to run upon message arrival
                 qos_profile_sensor_data)  # allows packet loss
 
+        self.pos = None
+        self.orient = [-1, -1, -1]
         self.go = True
         self.front_search = True
         self.back_search = False
@@ -32,33 +37,17 @@ class Tb3(Node):
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
         self.object_front = False
-
-    def vel(self, lin_vel_percent, ang_vel_percent=0):
-        """ publishes linear and angular velocities in percent
-        """
-        # for TB3 Waffle
-        MAX_LIN_VEL = 0.26  # m/s
-        MAX_ANG_VEL = 1.82  # rad/s
-
-        cmd_vel_msg = Twist()
-        cmd_vel_msg.linear.x = MAX_LIN_VEL * lin_vel_percent / 100
-        cmd_vel_msg.angular.z = MAX_ANG_VEL * ang_vel_percent / 100
-
-        self.cmd_vel_pub.publish(cmd_vel_msg)
-        self.ang_vel_percent = ang_vel_percent
-        self.lin_vel_percent = lin_vel_percent
+        self.min_dist_front = 0.14
+        self.min_dist_back = 0.14
+        self.min_dist_right = 0.14
+        self.min_dist_left = 0.14
+        self.state = -2
 
     def scan_callback(self, msg):
         """ is run whenever a LaserScan msg is received
         """
 
-        print('\nmin Distance to front object:', min([msg.ranges[x] for x in range(-90, 90)]))
-        print('Minimal distance front wall to back wall: ', min([msg.ranges[x] for x in range(-30, 30)]) + min([msg.ranges[x] for x in range(150, 210)]))
-        print('Minimal distance left wall to right wall: ', min([msg.ranges[x] for x in range(-120, -60)]) + min([msg.ranges[x] for x in range(60, 120)]), '\n')
-        dis = min([msg.ranges[x] for x in range(-30, 30)])
-
-        min_dist_front = 0.14 # half robot
-        search_object(self, laser=msg.ranges, scan_range_front=min_dist_front)
+        search_object(self, laser=msg.ranges)
         start_search(self)
 
         if self.go:
@@ -67,6 +56,7 @@ class Tb3(Node):
         else:
             if self.object_front:
                 stop(self)
+        diagnostics(self)
 
 def main(args=None):
     rclpy.init(args=args)

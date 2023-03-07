@@ -1,0 +1,150 @@
+import math
+import os
+from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_wall, check_back_wall
+
+
+def diagnostics(tb3):
+    os.system("clear")
+    print(f"{get_title()}")
+    try:
+        if tb3.pos is not None and tb3.orient is not None:
+            if hasattr(tb3, 'odom_sub'):
+                print(
+                    f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
+                print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
+
+            print(f"{get_state(tb3.state)}")
+            if tb3.state == -2 or tb3.state == -4:
+                print(f"Which directions are searched:  (SEARCH > FOUND)")
+                print(f"\t\t{tb3.front_search}>{tb3.object_front}")
+                print(f"\t\t    ^")
+                print(f"{tb3.left_search}>{tb3.object_left} \t\t\t {tb3.right_search}>{tb3.object_right}")
+                print(f"\t\t    v")
+                print(f"\t\t{tb3.back_search}>{tb3.object_back}")
+
+            if tb3.state == -4:
+                print(f"View: {tb3.VIEW}")
+                print(f"Rotating: {tb3.rot}")
+                print(f"Rotate direction: {tb3.rotate_direction}")
+                print(f"Driving: {tb3.go}")
+            # print(f"Check for Dead ends: {tb3.deadend}")
+
+            if tb3.state == 0:
+                print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
+                print(f"#Beams\t|\t <\t>")
+                print(f"{'-' * 35}")
+                for g in tb3.groups:
+                    print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}")
+            if tb3.state == 1:
+                print(f"Rotation speed: {tb3.rotation_velocity}")
+                print(f"Rotation tolerance: {tb3.rotation_tolerance}")
+                print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
+                print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
+                print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
+                print(f"latest Origin: {tb3.last_origin_degree}")
+            if tb3.state == 2:
+                print(f"Speed: {tb3.drive_velovity}")
+                print(f"Collisions:\n")
+                print(f"\t{check_front_wall(tb3)}")
+                print(f"\t  ^")
+                print(f"{check_left_wall(tb3)} <\t\t> {check_right_wall(tb3)}")
+                print(f"\t  v")
+                print(f"\t{check_back_wall(tb3)}")
+    except Exception as e:
+        print(e)
+
+
+def get_title():
+    return """
+        ,----,
+      ,/   .`|                                                                                          .--,-``-.
+    ,`   .'  :                        ___     ,--,                                     ___             /   /     '.
+  ;    ;     /                      ,--.'|_ ,--.'|               ,---,               ,--.'|_          / ../        ;
+.'___,/    ,'        ,--,  __  ,-.  |  | :,'|  | :             ,---.'|      ,---.    |  | :,'         \ ``\  .`-    '
+|    :     |       ,'_ /|,' ,'/ /|  :  : ' ::  : '             |   | :     '   ,'\   :  : ' :          \___\/   \   :
+;    |.';  ;  .--. |  | :'  | |' |.;__,'  / |  ' |      ,---.  :   : :    /   /   |.;__,'  /                \   :   |
+`----'  |  |,'_ /| :  . ||  |   ,'|  |   |  '  | |     /     \ :     |,-..   ; ,. :|  |   |                 /  /   /
+    '   :  ;|  ' | |  . .'  :  /  :__,'| :  |  | :    /    /  ||   : '  |'   | |: ::__,'| :                 \  \   \\
+    |   |  '|  | ' |  | ||  | '     '  : |__'  : |__ .    ' / ||   |  / :'   | .; :  '  : |__           ___ /   :   |
+    '   :  |:  | : ;  ; |;  : |     |  | '.'|  | '.'|'   ;   /|'   : |: ||   :    |  |  | '.'|         /   /\   /   :
+    ;   |.' '  :  `--'   \  , ;     ;  :    ;  :    ;'   |  / ||   | '/ : \   \  /   ;  :    ;        / ,,/  ',-    .
+    '---'   :  ,      .-./---'      |  ,   /|  ,   / |   :    ||   :    |  `----'    |  ,   /         \ ''\        ;
+             `--`----'               ---`-'  ---`-'   \   \  / /    \  /              ---`-'           \   \     .'
+                                                       `----'  `-'----'                                 `--`-,,-'
+"""
+
+
+def get_state(state):
+    # https://patorjk.com/software/taag/#p=display&f=Small&t=State%3A%206
+    # Font "Small"
+    if state == -2:
+        return """
+   ___                       _   ___       __                    _   _          
+  / __|___ _ _  ___ _ _ __ _| | |_ _|_ _  / _|___ _ _ _ __  __ _| |_(_)___ _ _  
+ | (_ / -_) ' \/ -_) '_/ _` | |  | || ' \|  _/ _ \ '_| '  \/ _` |  _| / _ \ ' \ 
+  \___\___|_||_\___|_| \__,_|_| |___|_||_|_| \___/_| |_|_|_\__,_|\__|_\___/_||_|
+  """
+    if state == -1:
+        return """
+  ___ _        _       _         _    ___                   _             _
+ / __| |_ __ _| |_ ___(_)  ___  / |  / __|_ _ ___ _  _ _ __(_)_ _  __ _  | |__  ___ __ _ _ __  ___
+ \__ \  _/ _` |  _/ -_)_  |___| | | | (_ | '_/ _ \ || | '_ \ | ' \/ _` | | '_ \/ -_) _` | '  \(_-<
+ |___/\__\__,_|\__\___(_)       |_|  \___|_| \___/\_,_| .__/_|_||_\__, | |_.__/\___\__,_|_|_|_/__/
+                                                      |_|         |___/
+    """
+    elif state == 0:
+        return """
+  ___ _        _       _    __    ___      _        _     _                         _
+ / __| |_ __ _| |_ ___(_)  /  \  / __| ___| |___ __| |_  | |__  ___ __ _ _ __    __| |___ __ _ _ _ ___ ___
+ \__ \  _/ _` |  _/ -_)_  | () | \__ \/ -_) / -_) _|  _| | '_ \/ -_) _` | '  \  / _` / -_) _` | '_/ -_) -_)
+ |___/\__\__,_|\__\___(_)  \__/  |___/\___|_\___\__|\__| |_.__/\___\__,_|_|_|_| \__,_\___\__, |_| \___\___|
+                                                                                         |___/
+    """
+    elif state == 1:
+        return """
+  ___ _        _       _   _   ___     _        _         _            _
+ / __| |_ __ _| |_ ___(_) / | | _ \___| |_ __ _| |_ ___  | |_ ___   __| |___ __ _ _ _ ___ ___
+ \__ \  _/ _` |  _/ -_)_  | | |   / _ \  _/ _` |  _/ -_) |  _/ _ \ / _` / -_) _` | '_/ -_) -_)
+ |___/\__\__,_|\__\___(_) |_| |_|_\___/\__\__,_|\__\___|  \__\___/ \__,_\___\__, |_| \___\___|
+                                                                            |___/
+    """
+    elif state == 2:
+        return """
+  ___ _        _       _   ___   ___      _
+ / __| |_ __ _| |_ ___(_) |_  ) |   \ _ _(_)_ _____
+ \__ \  _/ _` |  _/ -_)_   / /  | |) | '_| \ V / -_)
+ |___/\__\__,_|\__\___(_) /___| |___/|_| |_|\_/\___|
+
+    """
+    elif state == 3:
+        return """
+  ___ _        _       _   ____   ___ _           _   _              __                          _
+ / __| |_ __ _| |_ ___(_) |__ /  / __| |_  ___ __| |_(_)_ _  __ _   / _|___ _ _   __ _ ___  __ _| |
+ \__ \  _/ _` |  _/ -_)_   |_ \ | (__| ' \/ -_) _| / / | ' \/ _` | |  _/ _ \ '_| / _` / _ \/ _` | |
+ |___/\__\__,_|\__\___(_) |___/  \___|_||_\___\__|_\_\_|_||_\__, | |_| \___/_|   \__, \___/\__,_|_|
+                                                            |___/                |___/
+    """
+    elif state == 4:
+        return """
+  ___ _        _       _   _ _    ___      _        _                         _
+ / __| |_ __ _| |_ ___(_) | | |  | _ ) ___| |_   __| |_ ___ _ __ _ __  ___ __| |
+ \__ \  _/ _` |  _/ -_)_  |_  _| | _ \/ _ \  _| (_-<  _/ _ \ '_ \ '_ \/ -_) _` |
+ |___/\__\__,_|\__\___(_)   |_|  |___/\___/\__| /__/\__\___/ .__/ .__/\___\__,_|
+                                                           |_|  |_|
+    """
+    elif state == 5:
+        return """
+  ___ _        _       _   ___
+ / __| |_ __ _| |_ ___(_) | __|
+ \__ \  _/ _` |  _/ -_)_  |__ \
+ |___/\__\__,_|\__\___(_) |___/
+    """
+    elif state == 6:
+        return """
+  ___ _        _       _    __
+ / __| |_ __ _| |_ ___(_)  / /
+ \__ \  _/ _` |  _/ -_)_  / _ \
+ |___/\__\__,_|\__\___(_) \___/
+    """
+    else:
+        return ""
