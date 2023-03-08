@@ -1,3 +1,4 @@
+import os
 import rclpy
 from statistics import median
 from rclpy.node import Node
@@ -112,7 +113,7 @@ class Tb3(Node):
         if self.state == 0:
             # Check for highest beam
             self.beam = get_degree_of_random_group(self)
-            # self.state = 1
+            self.state = 1
         elif self.state == 1:
             # Rotate the bot to the beam
             if self.beam is not None:

@@ -53,7 +53,7 @@ def diagnostics(tb3):
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
-            if tb3.state == 0:
+            if tb3.state == 0 or tb3.state == 1:
                 print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
                 print(f"#Beams\t|\t <\t>")
                 print(f"{'-' * 35}")
@@ -65,6 +65,7 @@ def diagnostics(tb3):
                 print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
                 print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
                 print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
+                print(f"Rotation clockwise: {tb3.rotation_clockwise}")
                 print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
                 print(f"latest Origin: {tb3.last_origin_degree}")
             if tb3.state == 2:
