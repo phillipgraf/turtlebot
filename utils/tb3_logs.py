@@ -45,13 +45,13 @@ def diagnostics(tb3):
                 print("\n***COLOR DETECTION***")
                 print(f"Detected red wall: {tb3.color}")
 
-                print("\n***MAPPING***")
-                print(f"Bot is in cell: {tb3.cell}")
-                print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
-                print("Cell storage:", tb3.cell_storage)
-                print("Known cells:", tb3.known_cells)
-                print("Node ID:", tb3.node_id)
-                tb3.maze.show()
+            print("\n***MAPPING***")
+            print(f"Bot is in cell: {tb3.cell}")
+            print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
+            print("Cell storage:", tb3.cell_storage)
+            print("Known cells:", tb3.known_cells)
+            print("Node ID:", tb3.node_id)
+            tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
