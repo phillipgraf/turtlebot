@@ -1,6 +1,9 @@
 import math
+import itertools
+import os
 import random
 from statistics import mean, median
+import sys
 
 from matplotlib import pyplot as plt
 
@@ -124,8 +127,8 @@ def get_grouped(tb3):
 def get_degree_of_random_group(tb3):
     filt_groups = list(filter(lambda x: not check_dead_end(tb3, x), tb3.groups))
     if len(filt_groups) >= 1:
-        rand_group = random.choice(filt_groups)
-        med = int(median(rand_group))
+        rand_group = filt_groups[0]# random.choice(filt_groups)
+        med = rand_group[int(len(rand_group) / 2)]
         return (med, tb3.beams[med])
     else:
         pass
@@ -236,20 +239,14 @@ def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5
                         else:
                             same_y_2.append(point2)
 
-    real_walls_x = []
-    real_walls_y = []
-    if len(same_x_1) > wall_threshold:
+    if check_wall(same_x_1, wall_threshold):
         wall += 1
-        real_walls_x.append(same_x_1[:])
-    if len(same_x_2) > wall_threshold:
+    if check_wall(same_x_2, wall_threshold):
         wall += 1
-        real_walls_x.append(same_x_2[:])
-    if len(same_y_1) > wall_threshold:
+    if check_wall(same_y_1, wall_threshold):
         wall += 1
-        real_walls_y.append(same_y_1[:])
-    if len(same_y_2) > wall_threshold:
+    if check_wall(same_y_2, wall_threshold):
         wall += 1
-        real_walls_y.append(same_y_2[:])
 
     if visualize:
         visualize_endpoints(end_points, "Endpoints")
@@ -259,27 +256,74 @@ def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5
         visualize_endpoints(same_x_2, "SAME X2")
 
     if wall == 3:
-        if correct_wall_formation(real_walls_x, real_walls_y):
+        # map(list, set(map(tuple, same_x_1)))
+        if correct_wall_formation(
+                list(k for k,_ in itertools.groupby(same_x_1)),
+                list(k for k,_ in itertools.groupby(same_y_1)),
+                list(k for k,_ in itertools.groupby(same_x_2)),
+                list(k for k,_ in itertools.groupby(same_y_2)),
+            ):
             tb3.deadend = True
             return True
     tb3.deadend = False
     return False
 
-def correct_wall_formation(walls_x, walls_y):
-    if len(walls_x) < len(walls_y):
-        # Compare if walls_x is in between walls_y
-        y1 = mean(map(lambda y: y[1], walls_y[0]))
-        y2 = mean(map(lambda y: y[1], walls_y[1]))
-        if y1 < y2:
-            return all([y1 <= x[0] <= y2 for x in walls_x])
-        else:
-            return all([y2 <= x[0] <= y1 for x in walls_x])
-    else:
-        # Compare if walls_y is in between walls_x
-        x1 = mean(map(lambda x: x[1], walls_x[0]))
-        x2 = mean(map(lambda x: x[1], walls_x[1]))
+def check_wall(wall, thresh = 5):
+    return len(wall) > thresh 
+
+def correct_wall_formation(walls_x_1, walls_y_1, walls_x_2, walls_y_2):
+    if check_wall(walls_x_1) and check_wall(walls_x_2) and check_wall(walls_y_1):
+        x1 = mean(map(lambda x: x[1], walls_x_1))
+        x2 = mean(map(lambda x: x[1], walls_x_2))
+        thresh = len(walls_y_1) * 0.9
         if x1 < x2:
-            return all([x1 <= y[0] <= x2 for y in walls_y])
+            return len([y for y in walls_y_1 if x1 <= y[1] <= x2]) >= thresh
         else:
-            return all([x2 <= y[0] <= x1 for y in walls_y])
+            return len([y for y in walls_y_1 if x2 <= y[1] <= x1]) >= thresh
+    elif check_wall(walls_x_1) and check_wall(walls_x_2) and check_wall(walls_y_2):
+        x1 = mean(map(lambda x: x[1], walls_x_1))
+        x2 = mean(map(lambda x: x[1], walls_x_2))
+        thresh = len(walls_y_2) * 0.9
+        if x1 < x2:
+            return len([y for y in walls_y_2 if x1 <= y[1] <= x2]) >= thresh
+        else:
+            return len([y for y in walls_y_2 if x2 <= y[1] <= x1]) >= thresh
+    elif check_wall(walls_y_1) and check_wall(walls_y_2) and check_wall(walls_x_1):
+        y1 = mean(map(lambda y: y[0], walls_y_1))
+        y2 = mean(map(lambda y: y[0], walls_y_2))
+        thresh = len(walls_x_1) * 0.9
+        if y1 < y2:
+            return len([x for x in walls_x_1 if y1 <= x[0] <= y2]) >= thresh
+        else:
+            return len([x for x in walls_x_1 if y2 <= x[0] <= y1]) >= thresh
+    elif check_wall(walls_y_1) and check_wall(walls_y_2) and check_wall(walls_x_2):
+        y1 = mean(map(lambda y: y[0], walls_y_1))
+        y2 = mean(map(lambda y: y[0], walls_y_2))
+        thresh = len(walls_x_2) * 0.9
+        if y1 < y2:
+            return len([x for x in walls_x_2 if y1 <= x[0] <= y2]) >= thresh
+        else:
+            return len([x for x in walls_x_2 if y2 <= x[0] <= y1]) >= thresh
+    
+    # print(f"\n\n")
+    # if len(walls_x) < len(walls_y):
+    #     # Compare if walls_x is in between walls_y
+    #     y1 = mean(map(lambda y: y[0], walls_y[0]))
+    #     y2 = mean(map(lambda y: y[0], walls_y[1]))
+    #     if y1 < y2:
+    #         print(f"x < y || y1 < y2 || {len([x for x in walls_x[0] if y1 <= x[0] <= y2])}")
+    #         return len([x for x in walls_x[0] if y1 <= x[0] <= y2]) >= thresh
+    #     else:
+    #         print(f"x{len(walls_x)} < y{len(walls_y)} || y1:{y1} > y2:{y2} | {len(walls_x[0])} | {len([x for x in walls_x[0] if y2 <= x[0] <= y1])}")
+    #         return len([x for x in walls_x[0] if y2 <= x[0] <= y1]) >= thresh
+    # else:
+    #     # Compare if walls_y is in between walls_x
+    #     x1 = mean(map(lambda x: x[1], walls_x[0]))
+    #     x2 = mean(map(lambda x: x[1], walls_x[1]))
+    #     if x1 < x2:
+    #         print(f"x > y || x1 < x2 || {len([y for y in walls_y[0] if x1 <= y[1] <= x2])}")
+    #         return len([y for y in walls_y[0] if x1 <= y[1] <= x2]) >= thresh
+    #     else:
+    #         print(f"x > y || x1 > x2 || {len([y for y in walls_y[0] if x2 <= y[1] <= x1])}")
+    #         return len([y for y in walls_y[0] if x2 <= y[1] <= x1]) >= thresh
 
