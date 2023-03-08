@@ -122,7 +122,7 @@ class Tb3(Botnode):
             if check_cell(self, get_cell(self)):
                 self.known_cells = self.cell_storage[:]
                 self.cell_storage.append(current_cell[:])
-            pathfinding(self)
+            path_creating(self)
             #self.maze.show()
 
         if self.go:
