@@ -35,18 +35,9 @@ def rotate_degree(tb3):
     if tb3.rotation_clockwise:
         rotate_dir(tb3)
         tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
-        if in_tolerance(tb3):
-            tb3.pre_rotate = 9999
-            stop(tb3)
-            tb3.state = 2
     else:
         rotate_dir(tb3)
         tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) - tb3.beam[0])
-        if in_tolerance(tb3):
-            tb3.pre_rotate = 9999
-            stop(tb3)
-            tb3.state = 2
-
 def drive_until_wall(tb3):
     drive(tb3, tb3.drive_velocity)
     if tb3.goal_road:

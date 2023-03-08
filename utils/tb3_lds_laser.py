@@ -16,11 +16,14 @@ def get_red_beam(tb3):
     tb3.red_beam = med
     return (med, tb3.beams[med])
 
+
 def detect_red_with_lds(tb3):
     return any(tb3.beam_intensities[x] == 2 for x in range(0, len(tb3.beams)))
 
+
 def detect_red_with_lds_front(tb3):
     return all(tb3.beam_intensities[x] == 2 for x in range(-20, 20))
+
 
 def search_object(tb3: object, laser):
     """
@@ -66,7 +69,7 @@ def search_object(tb3: object, laser):
             tb3.object_left = False
 
 
-def check_front_wall(tb3, end = False):
+def check_front_wall(tb3, end=False):
     if end:
         return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
     return any(tb3.beams[x] < tb3.front_distance for x in range(-30, 30))
@@ -91,7 +94,7 @@ def get_grouped_beams(tb3: object, beams):
     :param op_beams:
     :return:
     """
-    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if beams[x] > 1]
+    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if tb3.beam_distance < beams[x] < tb3.max_beam_distance]
     if len(op_beams) == 0:
         return
     tb3.groups = [[op_beams[0][0]]]
@@ -123,19 +126,27 @@ def get_grouped(tb3):
         else:
             idx = id
             tb3.groups.append([id])
-    if len(tb3.groups) >= 2 and tb3.groups[0][0] == 0 and tb3.groups[-1][-1] == 359:
-        tb3.groups = [tb3.groups[-1] + tb3.groups[0]] + tb3.groups[1:-1]
-    if len(tb3.groups) >= 1:
-        tb3.state = 0
+    filt_groups = list(filter(lambda x: not check_dead_end(tb3, shorten_group(x)) and big_enough_group(x), tb3.groups))
+    if len(filt_groups) >= 2 and filt_groups[0][0] == 0 and filt_groups[-1][-1] == 359:
+        filt_groups = [filt_groups[-1] + filt_groups[0]] + filt_groups[1:-1]
+    if len(filt_groups) >= 1:
+        tb3.groups = filt_groups
+
+
+def big_enough_group(group):
+    return len(group) > 25
+
+
+def shorten_group(group):
+    return (filter(lambda x: x < 2, group))
+
 
 def get_degree_of_random_group(tb3):
-    filt_groups = list(filter(lambda x: not check_dead_end(tb3, x), tb3.groups))
-    if len(filt_groups) >= 1:
-        rand_group = filt_groups[0]# random.choice(filt_groups)
+    if len(tb3.groups) >= 1:
+        rand_group = tb3.groups[0]
         med = rand_group[int(len(rand_group) / 2)]
         return (med, tb3.beams[med])
-    else:
-        pass
+
 
 def get_degree_of_prefered_group(tb3):
     saved_g = []
@@ -153,6 +164,16 @@ def get_degree_of_prefered_group(tb3):
         if len(tb3.groups) == 1:
             tb3.state = 4
             return
+
+def get_degree_of_group(tb3, beam_group):
+    med = beam_group[int(len(beam_group) / 2)]
+    return (med, tb3.beams[med])
+
+
+def drive_through_maze(tb3):
+    pass
+
+
 
 
 def get_laser_endpoint(start_x, start_y, len_laser, angular):
@@ -263,18 +284,20 @@ def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5
     if wall == 3:
         # map(list, set(map(tuple, same_x_1)))
         if correct_wall_formation(
-                list(k for k,_ in itertools.groupby(same_x_1)),
-                list(k for k,_ in itertools.groupby(same_y_1)),
-                list(k for k,_ in itertools.groupby(same_x_2)),
-                list(k for k,_ in itertools.groupby(same_y_2)),
-            ):
+                list(k for k, _ in itertools.groupby(same_x_1)),
+                list(k for k, _ in itertools.groupby(same_y_1)),
+                list(k for k, _ in itertools.groupby(same_x_2)),
+                list(k for k, _ in itertools.groupby(same_y_2)),
+        ):
             tb3.deadend = True
             return True
     tb3.deadend = False
     return False
 
-def check_wall(wall, thresh = 5):
-    return len(wall) > thresh 
+
+def check_wall(wall, thresh=5):
+    return len(wall) > thresh
+
 
 def correct_wall_formation(walls_x_1, walls_y_1, walls_x_2, walls_y_2):
     if check_wall(walls_x_1) and check_wall(walls_x_2) and check_wall(walls_y_1):
@@ -309,7 +332,7 @@ def correct_wall_formation(walls_x_1, walls_y_1, walls_x_2, walls_y_2):
             return len([x for x in walls_x_2 if y1 <= x[0] <= y2]) >= thresh
         else:
             return len([x for x in walls_x_2 if y2 <= x[0] <= y1]) >= thresh
-    
+
     # print(f"\n\n")
     # if len(walls_x) < len(walls_y):
     #     # Compare if walls_x is in between walls_y
@@ -331,4 +354,3 @@ def correct_wall_formation(walls_x_1, walls_y_1, walls_x_2, walls_y_2):
     #     else:
     #         print(f"x > y || x1 > x2 || {len([y for y in walls_y[0] if x2 <= y[1] <= x1])}")
     #         return len([y for y in walls_y[0] if x2 <= y[1] <= x1]) >= thresh
-

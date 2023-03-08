@@ -5,7 +5,7 @@ from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_w
 
 def diagnostics(tb3):
     os.system("clear")
-    print(f"{get_title()}")
+    # print(f"{get_title()}")
     try:
         if tb3.pos is not None and tb3.orient is not None:
             if hasattr(tb3, 'odom_sub'):
@@ -55,21 +55,21 @@ def diagnostics(tb3):
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
-            if tb3.state == 0 or tb3.state == 1:
-                print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
-                print(f"#Beams\t|\t <\t>")
-                print(f"{'-' * 35}")
-                for g in tb3.groups:
-                    print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
+            # if tb3.state == 0 or tb3.state == 1:
+            print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
+            print(f"#Beams\t|\t <\t>")
+            print(f"{'-' * 35}")
+            for g in tb3.groups:
+                print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
             if tb3.state == 1 or tb3.state == 5:
                 print(f"Rotation speed: {tb3.rotation_velocity}")
-                print(f"Rotation tolerance: {tb3.rotation_tolerance}")
-                print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
-                print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
-                print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
-                print(f"Rotation clockwise: {tb3.rotation_clockwise}")
-                print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
-                print(f"latest Origin: {tb3.last_origin_degree}")
+            print(f"Rotation tolerance: {tb3.rotation_tolerance}")
+            print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
+            print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
+            print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
+            print(f"Rotation clockwise: {tb3.rotation_clockwise}")
+            print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
+            print(f"latest Origin: {tb3.last_origin_degree}")
             if tb3.state == 2:
                 print(f"Speed: {tb3.drive_velocity}")
                 print(f"Collisions:\n")

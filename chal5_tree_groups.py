@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
 from utils.tb3_camera import detect_red
-from utils.tb3_lds_laser import detect_red_with_lds, detect_red_with_lds_front, get_grouped, get_degree_of_random_group, get_red_beam
+from utils.tb3_lds_laser import *
 from utils.tb3_logs import diagnostics
 from utils.tb3_motion import *
 from utils.tb3_mapping import *
@@ -97,6 +97,8 @@ class Tb3(Botnode):
         self.last_node = None
         self.node_id = str([1, 1])
 
+        self.drive_group = []
+
         self.state = -1
         """
             -1: Check the beams and create beam groups
@@ -121,33 +123,55 @@ class Tb3(Botnode):
         self.orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
                                   msg.pose.pose.orientation.w])
 
-
         if self.init_cell:
             self.cell[0] = 1
             self.cell[1] = 1
             self.cell_storage.append(self.cell[:])
             init_tree(self)
+            # self.drive_group = [1]
             self.init_cell = False
         else:
-
             if self.state == 0:
                 # Check for highest beam
-                self.beam = get_degree_of_random_group(self)
+                self.beam = get_degree_of_group(self, self.drive_group)
+                print(self.beam)
                 self.state = 1
             elif self.state == 1:
                 # Rotate the bot to the beam
                 if self.beam is not None:
                     self.rotation_clockwise = True if self.beam[0] >= 180 else False
                     rotate_degree(self)
+                    if in_tolerance(self):
+                        self.pre_rotate = 9999
+                        stop(self)
+                        self.state = 2
             elif self.state == 2:
                 # Drive forward
+                drive(self, self.drive_velocity)
                 current_cell = get_cell(self)
                 if check_cell(self, get_cell(self)):
-                    self.state = -1
                     self.known_cells = self.cell_storage[:]
                     self.cell_storage.append(current_cell[:])
                 path_creating(self)
-                drive_until_wall(self)
+                if self.beams is not None:
+                    self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if
+                                     self.beam_distance < self.beams[x]]
+                    get_grouped(self)
+                if self.goal_road:
+                    if check_front_wall(self, end=True):
+                        stop(self)
+                        self.state = 6
+                else:
+                    for group_index in range(len(self.groups)):
+                        if check_dead_end(self, self.groups[group_index]):
+                            stop(self)
+                            print("Dead END")
+                            if group_index < len(self.groups) - 1 and not check_dead_end(self, shorten_group(self.groups[group_index + 1])):
+                                self.drive_group = self.groups[group_index + 1]
+                                self.state = 0
+                    if check_front_wall(self):
+                        stop(self)
+                        self.state = 3
             elif self.state == 3:
                 if detect_red_with_lds(self):
                     self.beam = get_red_beam(self)
@@ -165,7 +189,7 @@ class Tb3(Botnode):
                     stop(self)
                     self.state = 2
                     self.goal_road = True
-        diagnostics(self)
+        #diagnostics(self)
 
     def scan_callback(self, msg):
         """
@@ -176,8 +200,12 @@ class Tb3(Botnode):
         self.beam_intensities = msg.intensities
         if self.state == -1:
             self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if
-                             self.beams[x] > self.beam_distance]
+                             self.beam_distance < self.beams[x]]
             get_grouped(self)
+            if len(self.groups) >= 1:
+                self.state = 0
+                self.drive_group = self.groups[0]
+
 
 def main(args=None):
     rclpy.init(args=args)
