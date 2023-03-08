@@ -1,6 +1,9 @@
 import math
 
 
+def mean(lst):
+    return sum(lst) / len(lst)
+
 def rad(deg):
     """
     Convert degree to radians

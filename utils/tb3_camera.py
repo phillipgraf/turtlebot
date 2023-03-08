@@ -17,7 +17,7 @@ def detect_red(tb3: object, fill_percentage=0.001, red_in_center=False):
     lower_red = np.array([0, 0, 100], np.uint8)
     upper_red = np.array([10, 10, 180], np.uint8)
     mask = cv2.inRange(tb3.image, lower_red, upper_red)
-    tb3.colorsum = (mask == 255).sum()
+    tb3.red_percentage = (mask == 255).sum() / (tb3.image.shape[0] * tb3.image.shape[1])
     needed_pxl = tb3.image.shape[0] * tb3.image.shape[1] * fill_percentage
     tb3.needed_pxl = needed_pxl
     if (mask == 255).sum() > needed_pxl:

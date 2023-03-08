@@ -8,7 +8,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
 from utils.tb3_camera import detect_red
-from utils.tb3_lds_laser import detect_red_with_lds, detect_red_with_lds_front, get_grouped, get_degree_of_prefered_group, get_red_beam
+from utils.tb3_lds_laser import detect_red_with_lds, detect_red_with_lds_front, get_grouped, get_degree_of_random_group, get_red_beam
 from utils.tb3_logs import diagnostics
 from utils.tb3_motion import *
 from transforms3d.euler import quat2euler
@@ -77,7 +77,8 @@ class Tb3(Node):
         self.rotation_tolerance = 0.02
         self.rotation_clockwise = False
 
-        self.beam_distance = 1.4
+        self.beam_distance = 1
+        self.max_beam_distance = 2
 
         self.front_distance = 0.45
         self.back_distance = 0.45
@@ -110,8 +111,8 @@ class Tb3(Node):
 
         if self.state == 0:
             # Check for highest beam
-            self.beam = get_degree_of_prefered_group(self)
-            self.state = 1
+            self.beam = get_degree_of_random_group(self)
+            # self.state = 1
         elif self.state == 1:
             # Rotate the bot to the beam
             if self.beam is not None:
@@ -125,6 +126,9 @@ class Tb3(Node):
                 self.beam = get_red_beam(self)
                 self.rotation_clockwise = True if self.beam[0] >= 180 else False
                 self.state = 5
+                stop(self)
+            else:
+                self.state = -1
                 stop(self)
         elif self.state == 4:
             stop(self)
