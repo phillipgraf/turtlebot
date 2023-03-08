@@ -1,25 +1,28 @@
-import rclpy
-from statistics import median
-from rclpy.node import Node
+import time
+
+import rclpy  # ROS client library
+from rclpy.node import Node as Botnode
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
-from utils.tb3_camera import detect_red
-from utils.tb3_lds_laser import get_grouped, get_degree_of_prefered_group
-from utils.tb3_logs import diagnostics
+from utils.tb3_camera import start_video, detect_red
+from utils.tb3_lds_laser import search_object, get_grouped_beams, check_dead_end
 from utils.tb3_motion import *
+from utils.tb3_logs import diagnostics
+from utils.tb3_mapping import *
 from transforms3d.euler import quat2euler
 from sensor_msgs.msg import Image
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 
-class Tb3(Node):
+class Tb3(Botnode):
     def __init__(self):
         super().__init__('tb3')
+
         self.cmd_vel_pub = self.create_publisher(
             Twist,  # message type
             'cmd_vel',  # topic name
@@ -45,110 +48,147 @@ class Tb3(Node):
             self.img_callback,
             qos_profile_sensor_data)
 
-        self.state = 0
+        self.state = -4
+        self.go = True
+        self.rot = False
+        self.front_search = True
+        self.back_search = True
+        self.right_search = True
+        self.left_search = True
+        self.object_front = False
+        self.object_back = False
+        self.object_left = False
+        self.object_right = False
+        self.counter = 0
         self.ang_vel_percent = 0
         self.lin_vel_percent = 0
         self.image = None
+        self.VIEW = "north"
         self.color = ""
-        self.beams = []
-
+        self.rotate_direction = None
         self.pos = None
         self.orient = [-1, -1, -1]
-        self.front_beams = {}
-        self.back_beams = {}
-        self.left_beams = {}
-        self.right_beams = {}
-        self.op_beams = [(0, 0)]
-        self.groups = []
-        self.pre_rotate = 9999
-        self.rot_goal = 9999
-        self.once = True
-        self.beam = (0, 0)
-        self.beam_intensities = []
+        self.groups = None
+        self.new_group_1 = []
+        self.new_group_2 = []
+        self.pos = None
+        self.dead_end = False
+        self.min_dist_front = 0.32
+        self.min_dist_back = 0.32
+        self.min_dist_left = 0.32
+        self.min_dist_right = 0.32
+        self.max_dist_front = 0
+        self.max_dist_left = 0
+        self.max_dist_back = 0
+        self.max_dist_right = 0
+        self.cell = [0, 0]
+        self.cell_storage = []
+        self.cell_count = 0
+        self.known_cells = []
+        self.init_cell = True
+        self.maze = None
+        self.last_node = None
+        self.node_id = str([1, 1])
 
-        self.last_origin_degree = None
-
-        self.drive_velovity = 20
-        self.rotation_velocity = 5
-        self.rotation_tolerance = 0.02
-        self.rotation_clockwise = False
-
-        self.beam_distance = 1.4
-
-        self.front_distance = 0.45
-        self.back_distance = 0.45
-        self.right_distance = 0.45
-        self.left_distance = 0.45
-
-        self.state = -1
-        """
-            -1: Check the beams and create beam groups
-            0: get beam for rotation
-            1: rotate to selected beam
-            2: drive until a wall
-            3: Check for red walls
-        """
 
     def img_callback(self, msg):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            self.image = cv_image
-            self.image_received = True
-            detect_red(self)
         except CvBridgeError as e:
             print(e)
-        self.image_received = False
+            return
+
+        self.image_received = True
+        self.image = cv_image
+
+        #start_video(self)
+        if not self.rot:
+            detect_red(self)
 
     def odom_callback(self, msg):
         self.pos = msg.pose.pose.position
-        self.orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
-                                  msg.pose.pose.orientation.w])
+        orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
+                             msg.pose.pose.orientation.w])
 
-        if self.state == 0:
-            # Check for highest beam
-            self.beam = get_degree_of_prefered_group(self)
-            self.state = 1
-        elif self.state == 1:
-            # Rotate the bot to the beam
-            if self.beam is not None:
-                self.rotation_clockwise = True if self.beam[0] >= 180 else False
-                rotate_degree(self)
-        elif self.state == 2:
-            # Drive forward
-            drive_until_wall(self)
-        elif self.state == 3:
-            rotate_dir(self)
-            if detect_red(self, fill_percentage=0.01, red_in_center=True):
-                stop(self)
-        elif self.state == 4:
-            stop(self)
+        if self.init_cell:
+            # init start cell
+            self.cell[0] = 1
+            self.cell[1] = 1
+            self.cell_storage.append(self.cell[:])
+            init_tree(self)
+            self.init_cell = False
+        else:
+            current_cell = get_cell(self)
+            if check_cell(self, get_cell(self)):
+                self.known_cells = self.cell_storage[:]
+                self.cell_storage.append(current_cell[:])
+            pathfinding(self)
+            #self.maze.show()
+
+        if self.go:
+            get_and_set_view(self, orient)
+            drive(self, 20)
+            start_search(self)
+            self.go = False
+
+        if self.rot:
+            rotate_90_degree(self, self.rotate_direction, orient)
+        else:
+            if self.color == "red":
+                if self.object_front:
+                    stop(self)
+                else:
+                    drive(self, 20)
+            else:
+                if self.cell == [1, 3] and self.VIEW != "south":
+                    stop(self)
+                    self.rot = True
+                    self.rotate_direction = 15
+                else:
+                    if self.object_front and self.object_left:
+                        stop(self)
+                        self.rot = True
+                        self.rotate_direction = -15
+                    elif self.object_front and self.object_right:
+                        stop(self)
+                        self.rot = True
+                        self.rotate_direction = 15
+                    elif self.object_front:
+                        stop(self)
+                        self.rot = True
+                        self.rotate_direction = 15
+                    elif self.object_right:
+                        stop(self)
+                        drive(self, 20)
+                    elif self.object_left:
+                        stop(self)
+                        drive(self, 20)
+                    else:
+                        self.go = True
         diagnostics(self)
 
     def scan_callback(self, msg):
         """
-                is run whenever a LaserScan msg is received
-                """
-        # min_dist_front = 0.32
-        # min_dist_back = 0.32
-        # min_dist_left = 0.32
-        # min_dist_right = 0.32
+        is run whenever a LaserScan msg is received
+        """
+        # Degrees of laser view
+        # 60 - 120 right side
+        # 150 -210 behind
+        # 240 - 300 left
+        # -30 - 30 front
 
-        self.beams = msg.ranges
-        self.beam_intensities = msg.intensities
-        if self.state == -1:
-            self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if
-                             self.beams[x] > self.beam_distance]
-            get_grouped(self)
-        diagnostics(self)
+        search_object(self, laser=msg.ranges)
+
 
 def main(args=None):
     rclpy.init(args=args)
+
     tb3 = Tb3()
     print('waiting for messages...')
 
     try:
         rclpy.spin(tb3)  # Execute tb3 node
-    # Blocks until the executor (spin) cannot work
+        # Blocks until the executor (spin) cannot work
     except KeyboardInterrupt:
         pass
 

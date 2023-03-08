@@ -1,7 +1,7 @@
 import time
 
 import rclpy  # ROS client library
-from rclpy.node import Node
+from rclpy.node import Node as Botnode
 from rclpy.qos import qos_profile_sensor_data
 
 from sensor_msgs.msg import LaserScan
@@ -12,7 +12,7 @@ from utils.tb3_motion import start_search, drive, stop
 from utils.tb3_logs import diagnostics
 
 
-class Tb3(Node):
+class Tb3(Botnode):
     def __init__(self):
         super().__init__('tb3')
 

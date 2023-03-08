@@ -154,6 +154,7 @@ def get_degree_of_prefered_group(tb3):
             tb3.state = 4
             return
 
+
 def get_laser_endpoint(start_x, start_y, len_laser, angular):
     """
     Get the postion of the endpoint of the laser

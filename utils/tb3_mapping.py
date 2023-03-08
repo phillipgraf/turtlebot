@@ -1,3 +1,4 @@
+from treelib import Node, Tree
 def get_cell(tb3):
     """
     Get the current tb3.cell of the bot.
@@ -38,4 +39,24 @@ def check_cell(tb3, cell):
     elif cell in tb3.cell_storage:
         tb3.new_cell = False
         return tb3.new_cell
+
+def init_tree(tb3):
+    """Init the tree to create a map of the maze"""
+    tb3.maze = Tree()
+    tb3.node_id = tb3.maze.create_node(tb3.cell[:], str(tb3.cell[:])).identifier
+
+def path_creating(tb3):
+    """
+    Create path as a tree.
+    :param tb3: Bot object.
+    :return:
+    """
+    tb3.parent_node_id = tb3.node_id
+    if tb3.new_cell:
+        tb3.node_id = str(get_cell(tb3))
+        tb3.maze.create_node(tb3.cell[:], tb3.node_id, parent=tb3.parent_node_id)
+    elif not tb3.new_cell:
+        tb3.node_id = str(get_cell(tb3))
+
+
         

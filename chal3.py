@@ -1,5 +1,5 @@
 import rclpy  # ROS client library
-from rclpy.node import Node
+from rclpy.node import Node as Botnode
 from rclpy.qos import qos_profile_sensor_data
 
 from nav_msgs.msg import Odometry
@@ -11,7 +11,7 @@ import math
 from utils.tb3_motion import drive, stop, rotate
 
 
-class Tb3(Node):
+class Tb3(Botnode):
     def __init__(self):
         super().__init__('tb3')
 
