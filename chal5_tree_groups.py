@@ -163,6 +163,10 @@ class Tb3(Botnode):
                         self.state = 6
                 else:
                     for group_index in range(len(self.groups)):
+                        group = shorten_group(self.groups[group_index])
+                        print("Shortne Group!:", list(group))
+                        print("Group!:", list(self.groups[group_index]))
+                        print("LENG", len(self.groups[group_index]))
                         if check_dead_end(self, self.groups[group_index]):
                             stop(self)
                             print("Dead END")
