@@ -50,6 +50,8 @@ def diagnostics(tb3):
                 print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
                 print("Cell storage:", tb3.cell_storage)
                 print("Known cells:", tb3.known_cells)
+                print("Node ID:", tb3.node_id)
+                tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 

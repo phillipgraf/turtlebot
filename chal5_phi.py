@@ -87,6 +87,8 @@ class Tb3(Botnode):
         self.known_cells = []
         self.init_cell = True
         self.maze = None
+        self.last_node = None
+        self.node_id = str([1, 1])
 
 
     def img_callback(self, msg):
@@ -120,6 +122,8 @@ class Tb3(Botnode):
             if check_cell(self, get_cell(self)):
                 self.known_cells = self.cell_storage[:]
                 self.cell_storage.append(current_cell[:])
+            pathfinding(self)
+            #self.maze.show()
 
         if self.go:
             get_and_set_view(self, orient)
