@@ -1,10 +1,23 @@
 import math
-from statistics import median
+import random
+from statistics import mean, median
 
 from matplotlib import pyplot as plt
 
 from utils.tb3_math import rad
 
+
+def get_red_beam(tb3):
+    reds = [x for x in range(0, len(tb3.beams)) if tb3.beam_intensities[x] == 2]
+    med = int(median(reds))
+    tb3.red_beam = med
+    return (med, tb3.beams[med])
+
+def detect_red_with_lds(tb3):
+    return any(tb3.beam_intensities[x] == 2 for x in range(0, len(tb3.beams)))
+
+def detect_red_with_lds_front(tb3):
+    return all(tb3.beam_intensities[x] == 2 for x in range(-20, 20))
 
 def search_object(tb3: object, laser):
     """
@@ -46,7 +59,9 @@ def search_object(tb3: object, laser):
             tb3.object_left = False
 
 
-def check_front_wall(tb3):
+def check_front_wall(tb3, end = False):
+    if end:
+        return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
     return any(tb3.beams[x] < tb3.front_distance for x in range(-30, 30))
 
 
@@ -106,6 +121,14 @@ def get_grouped(tb3):
     if len(tb3.groups) >= 1:
         tb3.state = 0
 
+def get_degree_of_random_group(tb3):
+    filt_groups = list(filter(lambda x: not check_dead_end(tb3, x), tb3.groups))
+    if len(filt_groups) >= 1:
+        rand_group = random.choice(filt_groups)
+        med = int(median(rand_group))
+        return (med, tb3.beams[med])
+    else:
+        pass
 
 def get_degree_of_prefered_group(tb3):
     saved_g = []
@@ -156,7 +179,7 @@ def visualize_endpoints(points, name):
     plt.show()
 
 
-def check_dead_end(tb3, beam_group, msg, find_points_threshold=0.01, wall_threshold=5, visualize=False):
+def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5, visualize=False):
     """
     Set status tb3.dead_end to True or False, if the Bot found a dead end in this specific Group set the status
     tb3.dead_end to True
@@ -181,12 +204,12 @@ def check_dead_end(tb3, beam_group, msg, find_points_threshold=0.01, wall_thresh
 
     # get endpoints of the lasers in the laser group
     for beam in beam_group:
-        end_point = get_laser_endpoint(tb3.pos.x, tb3.pos.y, msg.ranges[beam], beam)
+        end_point = get_laser_endpoint(tb3.pos.x, tb3.pos.y, tb3.beams[beam], beam)
         x_axis.append(end_point[0])
         y_axis.append(end_point[1])
         end_points.append(end_point)
         i += 1
-        print(i)
+        # print(i)
 
     # split the endpoints in 2 Groups
     # y-Groups, points which have the same y-axis
@@ -213,19 +236,20 @@ def check_dead_end(tb3, beam_group, msg, find_points_threshold=0.01, wall_thresh
                         else:
                             same_y_2.append(point2)
 
+    real_walls_x = []
+    real_walls_y = []
     if len(same_x_1) > wall_threshold:
         wall += 1
+        real_walls_x.append(same_x_1[:])
     if len(same_x_2) > wall_threshold:
         wall += 1
+        real_walls_x.append(same_x_2[:])
     if len(same_y_1) > wall_threshold:
         wall += 1
+        real_walls_y.append(same_y_1[:])
     if len(same_y_2) > wall_threshold:
         wall += 1
-
-    if wall >= 3:
-        tb3.deadend = True
-    else:
-        tb3.deadend = False
+        real_walls_y.append(same_y_2[:])
 
     if visualize:
         visualize_endpoints(end_points, "Endpoints")
@@ -233,3 +257,29 @@ def check_dead_end(tb3, beam_group, msg, find_points_threshold=0.01, wall_thresh
         visualize_endpoints(same_y_2, "SAME Y2")
         visualize_endpoints(same_x_1, "SAME X1")
         visualize_endpoints(same_x_2, "SAME X2")
+
+    if wall == 3:
+        if correct_wall_formation(real_walls_x, real_walls_y):
+            tb3.deadend = True
+            return True
+    tb3.deadend = False
+    return False
+
+def correct_wall_formation(walls_x, walls_y):
+    if len(walls_x) < len(walls_y):
+        # Compare if walls_x is in between walls_y
+        y1 = mean(map(lambda y: y[1], walls_y[0]))
+        y2 = mean(map(lambda y: y[1], walls_y[1]))
+        if y1 < y2:
+            return all([y1 <= x[0] <= y2 for x in walls_x])
+        else:
+            return all([y2 <= x[0] <= y1 for x in walls_x])
+    else:
+        # Compare if walls_y is in between walls_x
+        x1 = mean(map(lambda x: x[1], walls_x[0]))
+        x2 = mean(map(lambda x: x[1], walls_x[1]))
+        if x1 < x2:
+            return all([x1 <= y[0] <= x2 for y in walls_y])
+        else:
+            return all([x2 <= y[0] <= x1 for y in walls_y])
+

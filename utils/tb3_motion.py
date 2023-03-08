@@ -1,6 +1,6 @@
 import math
 
-from utils.tb3_lds_laser import check_front_wall
+from utils.tb3_lds_laser import check_front_wall, get_red_beam
 from utils.tb3_math import rad, rad_overlap
 from geometry_msgs.msg import Twist
 
@@ -49,9 +49,14 @@ def rotate_degree(tb3):
 
 def drive_until_wall(tb3):
     drive(tb3, tb3.drive_velocity)
-    if check_front_wall(tb3):
-        stop(tb3)
-        tb3.state = -1
+    if tb3.goal_road:
+        if check_front_wall(tb3, end = True):
+            stop(tb3)
+            tb3.state = 6
+    else:
+        if check_front_wall(tb3):
+            stop(tb3)
+            tb3.state = 3
 
 def stop(tb3: object):
     """

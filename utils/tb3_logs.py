@@ -1,6 +1,6 @@
 import math
 import os
-from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_wall, check_back_wall
+from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_wall, check_back_wall, detect_red_with_lds, get_red_beam, detect_red_with_lds_front, check_dead_end
 
 
 def diagnostics(tb3):
@@ -34,22 +34,32 @@ def diagnostics(tb3):
                 print(f"#Beams\t|\t <\t>")
                 print(f"{'-' * 35}")
                 for g in tb3.groups:
-                    print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}")
-            if tb3.state == 1:
+                    print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
+            if tb3.state == 1 or tb3.state == 5:
                 print(f"Rotation speed: {tb3.rotation_velocity}")
                 print(f"Rotation tolerance: {tb3.rotation_tolerance}")
                 print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
                 print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
+                print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
                 print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
                 print(f"latest Origin: {tb3.last_origin_degree}")
             if tb3.state == 2:
-                print(f"Speed: {tb3.drive_velovity}")
+                print(f"Speed: {tb3.drive_velocity}")
                 print(f"Collisions:\n")
                 print(f"\t{check_front_wall(tb3)}")
                 print(f"\t  ^")
                 print(f"{check_left_wall(tb3)} <\t\t> {check_right_wall(tb3)}")
                 print(f"\t  v")
                 print(f"\t{check_back_wall(tb3)}")
+
+            if tb3.state == 3:
+                print(f"Checking the laser indicators:\nRed found: {detect_red_with_lds(tb3)}")
+                print(f"Red beam: {get_red_beam(tb3)}")
+                print(f"Static red beam: {tb3.red_beam}")
+                print(f"Red at front: {detect_red_with_lds_front(tb3)}")
+
+            if hasattr(tb3, 'red_percentage'):
+                print(f"Looking for red...\nRed found in percent: {tb3.red_percentage}")
     except Exception as e:
         print(e)
 
@@ -126,25 +136,26 @@ def get_state(state):
     """
     elif state == 4:
         return """
-  ___ _        _       _   _ _    ___      _        _                         _
- / __| |_ __ _| |_ ___(_) | | |  | _ ) ___| |_   __| |_ ___ _ __ _ __  ___ __| |
- \__ \  _/ _` |  _/ -_)_  |_  _| | _ \/ _ \  _| (_-<  _/ _ \ '_ \ '_ \/ -_) _` |
- |___/\__\__,_|\__\___(_)   |_|  |___/\___/\__| /__/\__\___/ .__/ .__/\___\__,_|
+  ___ _        _         _ _  _   ___      _        _                         _
+ / __| |_ __ _| |_ ___  | | |(_) | _ ) ___| |_   __| |_ ___ _ __ _ __  ___ __| |
+ \__ \  _/ _` |  _/ -_) |_  _)_  | _ \/ _ \  _| (_-<  _/ _ \ '_ \ '_ \/ -_) _` |
+ |___/\__\__,_|\__\___)   |_|(_) |___/\___/\__| /__/\__\___/ .__/ .__/\___\__,_|
                                                            |_|  |_|
     """
     elif state == 5:
         return """
-  ___ _        _       _   ___
- / __| |_ __ _| |_ ___(_) | __|
- \__ \  _/ _` |  _/ -_)_  |__ \
- |___/\__\__,_|\__\___(_) |___/
+  ___ _        _         ___ _   ___        _    __                  _                _ _ _ _ 
+ / __| |_ __ _| |_ ___  | __(_) | _ \___ __| |  / _|___ _  _ _ _  __| |    __ _ ___  | | | | |
+ \__ \  _/ _` |  _/ -_) |__ \_  |   / -_) _` | |  _/ _ \ || | ' \/ _` |_  / _` / _ \ |_|_|_|_|
+ |___/\__\__,_|\__\___| |___(_) |_|_\___\__,_| |_| \___/\_,_|_||_\__,_( ) \__, \___/ (_|_|_|_)
+                                                                      |/  |___/               
     """
     elif state == 6:
         return """
-  ___ _        _       _    __
- / __| |_ __ _| |_ ___(_)  / /
- \__ \  _/ _` |  _/ -_)_  / _ \
- |___/\__\__,_|\__\___(_) \___/
+  ___ _        _          __ _  __      _____  __      _____  _  _   _ _ _ _ _ 
+ / __| |_ __ _| |_ ___   / /(_) \ \    / / __| \ \    / / _ \| \| | | | | | | |
+ \__ \  _/ _` |  _/ -_) / _ \_   \ \/\/ /| _|   \ \/\/ / (_) | .` | |_|_|_|_|_|
+ |___/\__\__,_|\__\___| \___(_)   \_/\_/ |___|   \_/\_/ \___/|_|\_| (_|_|_|_|_)
     """
     else:
         return ""
