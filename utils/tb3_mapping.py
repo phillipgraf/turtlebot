@@ -1,4 +1,13 @@
 from treelib import Node, Tree
+
+def cell_center(tb3, thresh = 0.2):
+    x = tb3.cell[0] - 0.5
+    y = tb3.cell[1] - 0.5
+    if tb3.VIEW == "north" or tb3.VIEW == "south":
+        return y - thresh <= tb3.pos.y <= y + thresh
+    if tb3.VIEW == "west" or tb3.VIEW == "east":
+        return x - thresh <= tb3.pos.x <= x + thresh
+
 def get_cell(tb3):
     """
     Get the current tb3.cell of the bot.

@@ -29,6 +29,13 @@ def rotate_dir(tb3):
 def in_tolerance(tb3):
     return tb3.rot_goal - tb3.rotation_tolerance <= tb3.orient[0] <= tb3.rot_goal + tb3.rotation_tolerance
 
+def did_rotate_to_angle(tb3, angle, tolerance):
+    return angle - tolerance <= tb3.orient[0] <= angle + tolerance
+
+def rotate_degree_specific(tb3, init_angle, angle):
+    rotate(tb3, 15)
+    tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
+
 def rotate_degree(tb3):
     if tb3.pre_rotate == 9999:
         tb3.pre_rotate = tb3.orient[0]
@@ -146,11 +153,13 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "west":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         # direction negative rotate to right
         elif direction_to_move < 0:
             if tb3.VIEW == "east":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -162,10 +171,12 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
             # if min(orient[0], -orient[0]) > rad(tb3.orient_south):
             if tb3.VIEW == "south":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "north":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -176,10 +187,12 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "east":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "west":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -190,10 +203,12 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "north":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "south":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return

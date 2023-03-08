@@ -7,7 +7,7 @@ import sys
 
 from matplotlib import pyplot as plt
 
-from utils.tb3_math import rad
+from utils.tb3_math import rad, rad_overlap
 
 
 def get_red_beam(tb3):
@@ -68,6 +68,12 @@ def search_object(tb3: object, laser):
         else:
             tb3.object_left = False
 
+def collide_with_wall(tb3):
+    return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
+
+def wall_in_range(tb3, range = 0.32):
+    return any(x < range for x in tb3.beams)
+
 
 def check_front_wall(tb3, end=False):
     if end:
@@ -94,7 +100,7 @@ def get_grouped_beams(tb3: object, beams):
     :param op_beams:
     :return:
     """
-    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if tb3.beam_distance < beams[x] < tb3.max_beam_distance]
+    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if tb3.beam_distance < beams[x]]
     if len(op_beams) == 0:
         return
     tb3.groups = [[op_beams[0][0]]]
@@ -126,19 +132,40 @@ def get_grouped(tb3):
         else:
             idx = id
             tb3.groups.append([id])
-    filt_groups = list(filter(lambda x: not check_dead_end(tb3, shorten_group(x)) and big_enough_group(x), tb3.groups))
+    filt_groups = list(filter(lambda x: not check_dead_end(tb3, shorten_group(tb3, x)) and big_enough_group(x), tb3.groups))
     if len(filt_groups) >= 2 and filt_groups[0][0] == 0 and filt_groups[-1][-1] == 359:
         filt_groups = [filt_groups[-1] + filt_groups[0]] + filt_groups[1:-1]
     if len(filt_groups) >= 1:
         tb3.groups = filt_groups
 
+def calculate_groups(tb3, beam_distance = 1):
+    op_beams = [(x, tb3.beams[x]) for x in range(0, len(tb3.beams)) if
+                     tb3.beams[x] > beam_distance]
+    if len(op_beams) == 0:
+        return
+    tb3.groups = [[op_beams[0][0]]]
+    idx = op_beams[0][0]
+    for x in op_beams[1:]:
+        id = x[0]
+        ab = abs(idx - id)
+        if ab == 1:
+            idx = id
+            tb3.groups[-1].append(id)
+        else:
+            idx = id
+            tb3.groups.append([id])
+    if len(tb3.groups) >= 2 and tb3.groups[0][0] == 0 and tb3.groups[-1][-1] == 359:
+        tb3.groups = [tb3.groups[-1] + tb3.groups[0]] + tb3.groups[1:-1]
+
+def filter_groups(tb3, groups):
+    return list(filter(lambda x: not check_dead_end(tb3, shorten_group(tb3, x)) and big_enough_group(x), groups))
 
 def big_enough_group(group):
     return len(group) > 25
 
 
-def shorten_group(group):
-    return (filter(lambda x: x < 2, group))
+def shorten_group(tb3, group):
+    return (filter(lambda x: tb3.beams[x] < 2, group))
 
 
 def get_degree_of_random_group(tb3):
@@ -164,6 +191,11 @@ def get_degree_of_prefered_group(tb3):
         if len(tb3.groups) == 1:
             tb3.state = 4
             return
+
+def get_specific_degree_of_group(init_angle, beam_group):
+    med = beam_group[int(len(beam_group) / 2)]
+    angle = rad_overlap((init_angle * (180 / math.pi)) + med)
+    return angle
 
 def get_degree_of_group(tb3, beam_group):
     med = beam_group[int(len(beam_group) / 2)]
