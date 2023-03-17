@@ -164,7 +164,7 @@ class Tb3(Botnode):
                 else:
                     for group_index in range(len(self.groups)):
                         group = shorten_group(self, self.groups[group_index])
-                        print("Shortne Group!:", list(group))
+                        print("Shorten Group!:", list(group))
                         print("Group!:", list(self.groups[group_index]))
                         print("LENG", len(self.groups[group_index]))
                         if check_dead_end(self, self.groups[group_index]):
@@ -176,6 +176,7 @@ class Tb3(Botnode):
                     if check_front_wall(self):
                         stop(self)
                         self.state = 3
+
             elif self.state == 3:
                 if detect_red_with_lds(self):
                     self.beam = get_red_beam(self)

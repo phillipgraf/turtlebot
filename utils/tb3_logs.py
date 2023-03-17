@@ -32,45 +32,45 @@ def diagnostics(tb3):
                 print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
 
             print(f"{get_state(tb3.state)}")
-            if tb3.state == -2 or tb3.state == -4:
-                print(f"Which directions are searched:  (SEARCH > FOUND)\n")
-                print(f"\t\t{tb3.front_search}>{tb3.object_front}")
-                print(f"\t\t    ^")
-                print(f"{tb3.left_search}>{tb3.object_left} \t\t\t {tb3.right_search}>{tb3.object_right}")
-                print(f"\t\t    v")
-                print(f"\t\t{tb3.back_search}>{tb3.object_back}")
-                print("\n***OBJECT VIEW***")
-                print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
-                print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
-                print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
-                print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
+            # if tb3.state == -2 or tb3.state == -4:
+                # print(f"Which directions are searched:  (SEARCH > FOUND)\n")
+                # print(f"\t\t{tb3.front_search}>{tb3.object_front}")
+                # print(f"\t\t    ^")
+                # print(f"{tb3.left_search}>{tb3.object_left} \t\t\t {tb3.right_search}>{tb3.object_right}")
+                # print(f"\t\t    v")
+                # print(f"\t\t{tb3.back_search}>{tb3.object_back}")
+                # print("\n***OBJECT VIEW***")
+                # print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
+                # print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
+                # print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
+                # print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
 
-            if tb3.state == -4:
-                print("\n***COMPASS VIEW***")
-                print(f"View: {tb3.VIEW}")
-                print(f"Rotating: {tb3.rot}")
-                if tb3.rotate_direction is None:
-                    rotate_direction = "-"
-                elif tb3.rotate_direction < 0:
-                    rotate_direction = "right"
-                elif tb3.rotate_direction > 0:
-                    rotate_direction = "left"
-                else:
-                    rotate_direction = "-"
-                print(f"Rotate direction:{rotate_direction}")
-                print(f"Driving: {tb3.go}")
-                print(f"DEAD_END: {tb3.rot_back}")
+            #if tb3.state == -4:
+                # print("\n***COMPASS VIEW***")
+                # print(f"View: {tb3.VIEW}")
+                # print(f"Rotating: {tb3.rot}")
+                # if tb3.rotate_direction is None:
+                #     rotate_direction = "-"
+                # elif tb3.rotate_direction < 0:
+                #     rotate_direction = "right"
+                # elif tb3.rotate_direction > 0:
+                #     rotate_direction = "left"
+                # else:
+                #     rotate_direction = "-"
+                # print(f"Rotate direction:{rotate_direction}")
+                # print(f"Driving: {tb3.go}")
+                # print(f"DEAD_END: {tb3.rot_back}")
+                #
+                # print("\n***COLOR DETECTION***")
+                # print(f"Detected red wall: {tb3.color}")
 
-                print("\n***COLOR DETECTION***")
-                print(f"Detected red wall: {tb3.color}")
-
-            # print("\n***MAPPING***")
-            # print(f"Bot is in cell: {tb3.cell}")
-            # print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
-            # print("Cell storage:", tb3.cell_storage)
-            # print("Known cells:", tb3.known_cells)
-            # print("Node ID:", tb3.node_id)
-            # tb3.maze.show()
+            print("\n***MAPPING***")
+            print(f"Bot is in cell: {tb3.cell}")
+            print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
+            print("Cell storage:", tb3.cell_storage)
+            print("Known cells:", tb3.known_cells)
+            print("Node ID:", tb3.node_id)
+            tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
