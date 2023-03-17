@@ -70,6 +70,7 @@ def diagnostics(tb3):
             print("Cell storage:", tb3.cell_storage)
             print("Known cells:", tb3.known_cells)
             print("Node ID:", tb3.node_id)
+            print("Neighbours Cells:", tb3.neighbour_cells)
             tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")

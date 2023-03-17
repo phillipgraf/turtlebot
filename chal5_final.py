@@ -94,6 +94,7 @@ class Tb3(Botnode):
         self.init_cell = True
         self.groups = []
         self.beams = []
+        self.neighbour_cells = {}
 
         self.back_go = False
         self.drive_back = False
@@ -128,6 +129,7 @@ class Tb3(Botnode):
             self.init_cell = False
         else:
             current_cell = get_cell(self)
+            get_neighbours_cell(self, current_cell)
             if check_cell(self, get_cell(self)):
                 self.known_cells = self.cell_storage[:]
                 self.cell_storage.append(current_cell[:])

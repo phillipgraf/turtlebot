@@ -33,6 +33,22 @@ def get_cell(tb3):
     else:
         return tb3.cell
 
+def get_neighbours_cell(tb3, cell):
+
+    north_neighbour = cell[:]
+    north_neighbour[1] = north_neighbour[1] + 1
+
+
+    south_neighbour = cell[:]
+    south_neighbour[1] = south_neighbour[1] - 1
+
+    east_neighbour = cell[:]
+    east_neighbour[0] = east_neighbour[0] + 1
+
+    west_neighbour = cell[:]
+    west_neighbour[0] = west_neighbour[0] - 1
+
+    tb3.neighbour_cells.update({"north": north_neighbour, "south": south_neighbour, "east": east_neighbour, "west": west_neighbour})
 def check_cell(tb3, cell):
     """
     Check if a given tb3.cell is a new tb3.cell for the bot or not.
