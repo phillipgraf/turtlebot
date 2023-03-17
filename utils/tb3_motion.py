@@ -29,24 +29,22 @@ def rotate_dir(tb3):
 def in_tolerance(tb3):
     return tb3.rot_goal - tb3.rotation_tolerance <= tb3.orient[0] <= tb3.rot_goal + tb3.rotation_tolerance
 
+def did_rotate_to_angle(tb3, angle, tolerance):
+    return angle - tolerance <= tb3.orient[0] <= angle + tolerance
+
+def rotate_degree_specific(tb3, init_angle, angle):
+    rotate(tb3, 15)
+    tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
+
 def rotate_degree(tb3):
     if tb3.pre_rotate == 9999:
         tb3.pre_rotate = tb3.orient[0]
     if tb3.rotation_clockwise:
         rotate_dir(tb3)
         tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
-        if in_tolerance(tb3):
-            tb3.pre_rotate = 9999
-            stop(tb3)
-            tb3.state = 2
     else:
         rotate_dir(tb3)
         tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) - tb3.beam[0])
-        if in_tolerance(tb3):
-            tb3.pre_rotate = 9999
-            stop(tb3)
-            tb3.state = 2
-
 def drive_until_wall(tb3):
     drive(tb3, tb3.drive_velocity)
     if tb3.goal_road:
@@ -68,6 +66,8 @@ def stop(tb3: object):
     vel(tb3, 0, 0)
     tb3.rotate_direction = 0
     tb3.rot = False
+    tb3.rot_back = False
+    tb3.drive_back = False
 
 
 def start_search(tb3):
@@ -91,6 +91,8 @@ def drive(tb3: object, velocity: int):
     """
     if velocity == 0:
         stop(tb3)
+        return
+    if tb3.drive_back:
         return
     vel(tb3, velocity, 0)
 
@@ -155,11 +157,13 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "west":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         # direction negative rotate to right
         elif direction_to_move < 0:
             if tb3.VIEW == "east":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -171,10 +175,12 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
             # if min(orient[0], -orient[0]) > rad(tb3.orient_south):
             if tb3.VIEW == "south":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "north":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -185,10 +191,12 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "east":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "west":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         else:
             return
@@ -199,10 +207,69 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
         if direction_to_move > 0:
             if tb3.VIEW == "north":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
         elif direction_to_move < 0:
             if tb3.VIEW == "south":
                 stop(tb3)
+                tb3.go = True
                 start_search(tb3)
+        else:
+            return
+
+
+def rotate_180_degree(tb3, direction_to_move, orient_of_bot):
+    """
+    Rotate to the bot to the given point of the compass. Currently only "north", "west", "south" and "east" implemented.
+    Also get_and_set the view of the bot.
+
+    Points of the compass:
+    - "north"
+    - "west"
+    - "south"
+    - "east"
+
+    :param tb3: Bot object.
+    :param direction_to_move: Positiv integer for left
+                              Negativ integer for right
+    :param orient_of_bot:  Current orientation state of the bot
+    """
+    if tb3.VIEW == "north":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "south":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "west":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "east":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "south":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "north":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "east":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "west":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
         else:
             return

@@ -2,10 +2,28 @@ import math
 import os
 from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_wall, check_back_wall, detect_red_with_lds, get_red_beam, detect_red_with_lds_front, check_dead_end
 
+def diagnostics_final(tb3):
+    os.system("clear")
+    try:
+        if tb3.pos is not None and tb3.orient is not None:
+            if hasattr(tb3, 'odom_sub'):
+                print(
+                    f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
+                print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
+
+
+            print(f"Bot in state: {tb3.state.name}")
+            print(f"Number of beams: {len(tb3.beams)}")
+            print(f"Number of beam-intensities: {len(tb3.beam_intensities)}")
+            print(f"\n\nCurrent Angle: {tb3.orient[0]} :: {tb3.angle} >> Difference {abs(tb3.orient[0] - tb3.angle)}")
+            print(f"Init angle: {tb3.init_angle}")
+
+    except Exception as e:
+        print(e)
 
 def diagnostics(tb3):
     os.system("clear")
-    print(f"{get_title()}")
+    # print(f"{get_title()}")
     try:
         if tb3.pos is not None and tb3.orient is not None:
             if hasattr(tb3, 'odom_sub'):
@@ -41,34 +59,36 @@ def diagnostics(tb3):
                     rotate_direction = "-"
                 print(f"Rotate direction:{rotate_direction}")
                 print(f"Driving: {tb3.go}")
+                print(f"DEAD_END: {tb3.rot_back}")
 
                 print("\n***COLOR DETECTION***")
                 print(f"Detected red wall: {tb3.color}")
 
-                print("\n***MAPPING***")
-                print(f"Bot is in cell: {tb3.cell}")
-                print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
-                print("Cell storage:", tb3.cell_storage)
-                print("Known cells:", tb3.known_cells)
-                print("Node ID:", tb3.node_id)
-                tb3.maze.show()
+            # print("\n***MAPPING***")
+            # print(f"Bot is in cell: {tb3.cell}")
+            # print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
+            # print("Cell storage:", tb3.cell_storage)
+            # print("Known cells:", tb3.known_cells)
+            # print("Node ID:", tb3.node_id)
+            # tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
-            if tb3.state == 0:
-                print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
-                print(f"#Beams\t|\t <\t>")
-                print(f"{'-' * 35}")
-                for g in tb3.groups:
-                    print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
+            # if tb3.state == 0 or tb3.state == 1:
+            print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
+            print(f"#Beams\t|\t <\t>")
+            print(f"{'-' * 35}")
+            for g in tb3.groups:
+                print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
             if tb3.state == 1 or tb3.state == 5:
                 print(f"Rotation speed: {tb3.rotation_velocity}")
-                print(f"Rotation tolerance: {tb3.rotation_tolerance}")
-                print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
-                print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
-                print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
-                print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
-                print(f"latest Origin: {tb3.last_origin_degree}")
+            # print(f"Rotation tolerance: {tb3.rotation_tolerance}")
+            # print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
+            # print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
+            # print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
+            # print(f"Rotation clockwise: {tb3.rotation_clockwise}")
+            # print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
+            # print(f"latest Origin: {tb3.last_origin_degree}")
             if tb3.state == 2:
                 print(f"Speed: {tb3.drive_velocity}")
                 print(f"Collisions:\n")

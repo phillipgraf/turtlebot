@@ -1,10 +1,13 @@
 import math
+import itertools
+import os
 import random
 from statistics import mean, median
+import sys
 
 from matplotlib import pyplot as plt
 
-from utils.tb3_math import rad
+from utils.tb3_math import rad, rad_overlap
 
 
 def get_red_beam(tb3):
@@ -13,11 +16,14 @@ def get_red_beam(tb3):
     tb3.red_beam = med
     return (med, tb3.beams[med])
 
+
 def detect_red_with_lds(tb3):
     return any(tb3.beam_intensities[x] == 2 for x in range(0, len(tb3.beams)))
 
+
 def detect_red_with_lds_front(tb3):
     return all(tb3.beam_intensities[x] == 2 for x in range(-20, 20))
+
 
 def search_object(tb3: object, laser):
     """
@@ -62,8 +68,14 @@ def search_object(tb3: object, laser):
         else:
             tb3.object_left = False
 
+def collide_with_wall(tb3):
+    return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
 
-def check_front_wall(tb3, end = False):
+def wall_in_range(tb3, range = 0.32):
+    return any(x < range for x in tb3.beams)
+
+
+def check_front_wall(tb3, end=False):
     if end:
         return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
     return any(tb3.beams[x] < tb3.front_distance for x in range(-30, 30))
@@ -88,7 +100,7 @@ def get_grouped_beams(tb3: object, beams):
     :param op_beams:
     :return:
     """
-    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if beams[x] > 1]
+    op_beams = [(x, beams[x]) for x in range(0, len(beams)) if tb3.beam_distance < beams[x]]
     if len(op_beams) == 0:
         return
     tb3.groups = [[op_beams[0][0]]]
@@ -120,19 +132,48 @@ def get_grouped(tb3):
         else:
             idx = id
             tb3.groups.append([id])
+    filt_groups = list(filter(lambda x: not check_dead_end(tb3, shorten_group(tb3, x)) and big_enough_group(x), tb3.groups))
+    if len(filt_groups) >= 2 and filt_groups[0][0] == 0 and filt_groups[-1][-1] == 359:
+        filt_groups = [filt_groups[-1] + filt_groups[0]] + filt_groups[1:-1]
+    if len(filt_groups) >= 1:
+        tb3.groups = filt_groups
+
+def calculate_groups(tb3, beam_distance = 1):
+    op_beams = [(x, tb3.beams[x]) for x in range(0, len(tb3.beams)) if
+                     tb3.beams[x] > beam_distance]
+    if len(op_beams) == 0:
+        return
+    tb3.groups = [[op_beams[0][0]]]
+    idx = op_beams[0][0]
+    for x in op_beams[1:]:
+        id = x[0]
+        ab = abs(idx - id)
+        if ab == 1:
+            idx = id
+            tb3.groups[-1].append(id)
+        else:
+            idx = id
+            tb3.groups.append([id])
     if len(tb3.groups) >= 2 and tb3.groups[0][0] == 0 and tb3.groups[-1][-1] == 359:
         tb3.groups = [tb3.groups[-1] + tb3.groups[0]] + tb3.groups[1:-1]
-    if len(tb3.groups) >= 1:
-        tb3.state = 0
+
+def filter_groups(tb3, groups):
+    return list(filter(lambda x: not check_dead_end(tb3, shorten_group(tb3, x)) and big_enough_group(x), groups))
+
+def big_enough_group(group):
+    return len(group) > 25
+
+
+def shorten_group(tb3, group):
+    return (filter(lambda x: tb3.beams[x] < 2, group))
+
 
 def get_degree_of_random_group(tb3):
-    filt_groups = list(filter(lambda x: not check_dead_end(tb3, x), tb3.groups))
-    if len(filt_groups) >= 1:
-        rand_group = random.choice(filt_groups)
-        med = int(median(rand_group))
+    if len(tb3.groups) >= 1:
+        rand_group = tb3.groups[0]
+        med = rand_group[int(len(rand_group) / 2)]
         return (med, tb3.beams[med])
-    else:
-        pass
+
 
 def get_degree_of_prefered_group(tb3):
     saved_g = []
@@ -150,6 +191,21 @@ def get_degree_of_prefered_group(tb3):
         if len(tb3.groups) == 1:
             tb3.state = 4
             return
+
+def get_specific_degree_of_group(init_angle, beam_group):
+    med = beam_group[int(len(beam_group) / 2)]
+    angle = rad_overlap((init_angle * (180 / math.pi)) + med)
+    return angle
+
+def get_degree_of_group(tb3, beam_group):
+    med = beam_group[int(len(beam_group) / 2)]
+    return (med, tb3.beams[med])
+
+
+def drive_through_maze(tb3):
+    pass
+
+
 
 
 def get_laser_endpoint(start_x, start_y, len_laser, angular):
@@ -241,20 +297,14 @@ def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5
                         else:
                             same_y_2.append(point2)
 
-    real_walls_x = []
-    real_walls_y = []
-    if len(same_x_1) > wall_threshold:
+    if check_wall(same_x_1, wall_threshold):
         wall += 1
-        real_walls_x.append(same_x_1[:])
-    if len(same_x_2) > wall_threshold:
+    if check_wall(same_x_2, wall_threshold):
         wall += 1
-        real_walls_x.append(same_x_2[:])
-    if len(same_y_1) > wall_threshold:
+    if check_wall(same_y_1, wall_threshold):
         wall += 1
-        real_walls_y.append(same_y_1[:])
-    if len(same_y_2) > wall_threshold:
+    if check_wall(same_y_2, wall_threshold):
         wall += 1
-        real_walls_y.append(same_y_2[:])
 
     if visualize:
         visualize_endpoints(end_points, "Endpoints")
@@ -264,27 +314,75 @@ def check_dead_end(tb3, beam_group, find_points_threshold=0.01, wall_threshold=5
         visualize_endpoints(same_x_2, "SAME X2")
 
     if wall == 3:
-        if correct_wall_formation(real_walls_x, real_walls_y):
+        # map(list, set(map(tuple, same_x_1)))
+        if correct_wall_formation(
+                list(k for k, _ in itertools.groupby(same_x_1)),
+                list(k for k, _ in itertools.groupby(same_y_1)),
+                list(k for k, _ in itertools.groupby(same_x_2)),
+                list(k for k, _ in itertools.groupby(same_y_2)),
+        ):
             tb3.deadend = True
             return True
     tb3.deadend = False
     return False
 
-def correct_wall_formation(walls_x, walls_y):
-    if len(walls_x) < len(walls_y):
-        # Compare if walls_x is in between walls_y
-        y1 = mean(map(lambda y: y[1], walls_y[0]))
-        y2 = mean(map(lambda y: y[1], walls_y[1]))
-        if y1 < y2:
-            return all([y1 <= x[0] <= y2 for x in walls_x])
-        else:
-            return all([y2 <= x[0] <= y1 for x in walls_x])
-    else:
-        # Compare if walls_y is in between walls_x
-        x1 = mean(map(lambda x: x[1], walls_x[0]))
-        x2 = mean(map(lambda x: x[1], walls_x[1]))
-        if x1 < x2:
-            return all([x1 <= y[0] <= x2 for y in walls_y])
-        else:
-            return all([x2 <= y[0] <= x1 for y in walls_y])
 
+def check_wall(wall, thresh=5):
+    return len(wall) > thresh
+
+
+def correct_wall_formation(walls_x_1, walls_y_1, walls_x_2, walls_y_2):
+    if check_wall(walls_x_1) and check_wall(walls_x_2) and check_wall(walls_y_1):
+        x1 = mean(map(lambda x: x[1], walls_x_1))
+        x2 = mean(map(lambda x: x[1], walls_x_2))
+        thresh = len(walls_y_1) * 0.9
+        if x1 < x2:
+            return len([y for y in walls_y_1 if x1 <= y[1] <= x2]) >= thresh
+        else:
+            return len([y for y in walls_y_1 if x2 <= y[1] <= x1]) >= thresh
+    elif check_wall(walls_x_1) and check_wall(walls_x_2) and check_wall(walls_y_2):
+        x1 = mean(map(lambda x: x[1], walls_x_1))
+        x2 = mean(map(lambda x: x[1], walls_x_2))
+        thresh = len(walls_y_2) * 0.9
+        if x1 < x2:
+            return len([y for y in walls_y_2 if x1 <= y[1] <= x2]) >= thresh
+        else:
+            return len([y for y in walls_y_2 if x2 <= y[1] <= x1]) >= thresh
+    elif check_wall(walls_y_1) and check_wall(walls_y_2) and check_wall(walls_x_1):
+        y1 = mean(map(lambda y: y[0], walls_y_1))
+        y2 = mean(map(lambda y: y[0], walls_y_2))
+        thresh = len(walls_x_1) * 0.9
+        if y1 < y2:
+            return len([x for x in walls_x_1 if y1 <= x[0] <= y2]) >= thresh
+        else:
+            return len([x for x in walls_x_1 if y2 <= x[0] <= y1]) >= thresh
+    elif check_wall(walls_y_1) and check_wall(walls_y_2) and check_wall(walls_x_2):
+        y1 = mean(map(lambda y: y[0], walls_y_1))
+        y2 = mean(map(lambda y: y[0], walls_y_2))
+        thresh = len(walls_x_2) * 0.9
+        if y1 < y2:
+            return len([x for x in walls_x_2 if y1 <= x[0] <= y2]) >= thresh
+        else:
+            return len([x for x in walls_x_2 if y2 <= x[0] <= y1]) >= thresh
+
+    # print(f"\n\n")
+    # if len(walls_x) < len(walls_y):
+    #     # Compare if walls_x is in between walls_y
+    #     y1 = mean(map(lambda y: y[0], walls_y[0]))
+    #     y2 = mean(map(lambda y: y[0], walls_y[1]))
+    #     if y1 < y2:
+    #         print(f"x < y || y1 < y2 || {len([x for x in walls_x[0] if y1 <= x[0] <= y2])}")
+    #         return len([x for x in walls_x[0] if y1 <= x[0] <= y2]) >= thresh
+    #     else:
+    #         print(f"x{len(walls_x)} < y{len(walls_y)} || y1:{y1} > y2:{y2} | {len(walls_x[0])} | {len([x for x in walls_x[0] if y2 <= x[0] <= y1])}")
+    #         return len([x for x in walls_x[0] if y2 <= x[0] <= y1]) >= thresh
+    # else:
+    #     # Compare if walls_y is in between walls_x
+    #     x1 = mean(map(lambda x: x[1], walls_x[0]))
+    #     x2 = mean(map(lambda x: x[1], walls_x[1]))
+    #     if x1 < x2:
+    #         print(f"x > y || x1 < x2 || {len([y for y in walls_y[0] if x1 <= y[1] <= x2])}")
+    #         return len([y for y in walls_y[0] if x1 <= y[1] <= x2]) >= thresh
+    #     else:
+    #         print(f"x > y || x1 > x2 || {len([y for y in walls_y[0] if x2 <= y[1] <= x1])}")
+    #         return len([y for y in walls_y[0] if x2 <= y[1] <= x1]) >= thresh

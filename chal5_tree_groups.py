@@ -9,9 +9,11 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
 from utils.tb3_camera import detect_red
-from utils.tb3_lds_laser import detect_red_with_lds, detect_red_with_lds_front, get_grouped, get_degree_of_random_group, get_red_beam
+from utils.tb3_lds_laser import *
 from utils.tb3_logs import diagnostics
 from utils.tb3_motion import *
+from utils.tb3_mapping import *
+
 from transforms3d.euler import quat2euler
 from sensor_msgs.msg import Image
 import cv2
@@ -73,7 +75,7 @@ class Tb3(Botnode):
         self.goal_road = False
         self.last_origin_degree = None
 
-        self.drive_velocity = 20
+        self.drive_velocity = 35
         self.rotation_velocity = 5
         self.rotation_tolerance = 0.02
         self.rotation_clockwise = False
@@ -85,6 +87,17 @@ class Tb3(Botnode):
         self.back_distance = 0.45
         self.right_distance = 0.45
         self.left_distance = 0.45
+
+        self.cell = [0, 0]
+        self.cell_storage = []
+        self.cell_count = 0
+        self.known_cells = []
+        self.init_cell = True
+        self.maze = None
+        self.last_node = None
+        self.node_id = str([1, 1])
+
+        self.drive_group = []
 
         self.state = -1
         """
@@ -110,36 +123,77 @@ class Tb3(Botnode):
         self.orient = quat2euler([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z,
                                   msg.pose.pose.orientation.w])
 
-        if self.state == 0:
-            # Check for highest beam
-            self.beam = get_degree_of_random_group(self)
-            self.state = 1
-        elif self.state == 1:
-            # Rotate the bot to the beam
-            if self.beam is not None:
-                self.rotation_clockwise = True if self.beam[0] >= 180 else False
+        if self.init_cell:
+            self.cell[0] = 1
+            self.cell[1] = 1
+            self.cell_storage.append(self.cell[:])
+            init_tree(self)
+            # self.drive_group = [1]
+            self.init_cell = False
+        else:
+            if self.state == 0:
+                # Check for highest beam
+                self.beam = get_degree_of_group(self, self.drive_group)
+                print(self.beam)
+                self.state = 1
+            elif self.state == 1:
+                # Rotate the bot to the beam
+                if self.beam is not None:
+                    self.rotation_clockwise = True if self.beam[0] >= 180 else False
+                    rotate_degree(self)
+                    if in_tolerance(self):
+                        self.pre_rotate = 9999
+                        stop(self)
+                        self.state = 2
+            elif self.state == 2:
+                # Drive forward
+                drive(self, self.drive_velocity)
+                current_cell = get_cell(self)
+                if check_cell(self, get_cell(self)):
+                    self.known_cells = self.cell_storage[:]
+                    self.cell_storage.append(current_cell[:])
+                path_creating(self)
+                if self.beams is not None:
+                    self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if
+                                     self.beam_distance < self.beams[x]]
+                    get_grouped(self)
+                if self.goal_road:
+                    if check_front_wall(self, end=True):
+                        stop(self)
+                        self.state = 6
+                else:
+                    for group_index in range(len(self.groups)):
+                        group = shorten_group(self, self.groups[group_index])
+                        print("Shortne Group!:", list(group))
+                        print("Group!:", list(self.groups[group_index]))
+                        print("LENG", len(self.groups[group_index]))
+                        if check_dead_end(self, self.groups[group_index]):
+                            stop(self)
+                            print("Dead END")
+                            if group_index < len(self.groups) - 1 and not check_dead_end(self, shorten_group(self, self.groups[group_index + 1])):
+                                self.drive_group = self.groups[group_index + 1]
+                                self.state = 0
+                    if check_front_wall(self):
+                        stop(self)
+                        self.state = 3
+            elif self.state == 3:
+                if detect_red_with_lds(self):
+                    self.beam = get_red_beam(self)
+                    self.rotation_clockwise = True if self.beam[0] >= 180 else False
+                    self.state = 5
+                    stop(self)
+                else:
+                    self.state = -1
+                    stop(self)
+            elif self.state == 4:
+                stop(self)
+            elif self.state == 5:
                 rotate_degree(self)
-        elif self.state == 2:
-            # Drive forward
-            drive_until_wall(self)
-        elif self.state == 3:
-            if detect_red_with_lds(self):
-                self.beam = get_red_beam(self)
-                self.rotation_clockwise = True if self.beam[0] >= 180 else False
-                self.state = 5
-                stop(self)
-            else:
-                self.state = -1
-                stop(self)
-        elif self.state == 4:
-            stop(self)
-        elif self.state == 5:
-            rotate_degree(self)
-            if detect_red_with_lds_front(self):
-                stop(self)
-                self.state = 2
-                self.goal_road = True
-        diagnostics(self)
+                if detect_red_with_lds_front(self):
+                    stop(self)
+                    self.state = 2
+                    self.goal_road = True
+        #diagnostics(self)
 
     def scan_callback(self, msg):
         """
@@ -150,8 +204,12 @@ class Tb3(Botnode):
         self.beam_intensities = msg.intensities
         if self.state == -1:
             self.op_beams = [(x, self.beams[x]) for x in range(0, len(self.beams)) if
-                             self.beams[x] > self.beam_distance]
+                             self.beam_distance < self.beams[x]]
             get_grouped(self)
+            if len(self.groups) >= 1:
+                self.state = 0
+                self.drive_group = self.groups[0]
+
 
 def main(args=None):
     rclpy.init(args=args)
