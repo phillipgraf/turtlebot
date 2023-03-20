@@ -60,6 +60,13 @@ def search_object(tb3: object, laser):
         else:
             tb3.object_left = False
 
+def collide_with_wall(tb3):
+    """
+    Collide with the wall for a given range
+    :param tb3: Bot object
+    """
+    return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
+
 
 
 
