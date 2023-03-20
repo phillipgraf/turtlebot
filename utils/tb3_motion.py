@@ -1,7 +1,7 @@
 import math
 
-from utils.tb3_lds_laser import check_front_wall, get_red_beam
-from utils.tb3_math import rad, rad_overlap
+from utils.tb3_lds_laser import *
+from utils.tb3_math import *
 from geometry_msgs.msg import Twist
 
 
@@ -19,42 +19,6 @@ def vel(tb3, lin_vel_percent, ang_vel_percent=0):
     tb3.cmd_vel_pub.publish(cmd_vel_msg)
     tb3.ang_vel_percent = ang_vel_percent
     tb3.lin_vel_percent = lin_vel_percent
-
-def rotate_dir(tb3):
-    if tb3.rotation_clockwise:
-        rotate(tb3, -tb3.rotation_velocity)
-    else:
-        rotate(tb3, tb3.rotation_velocity)
-
-def in_tolerance(tb3):
-    return tb3.rot_goal - tb3.rotation_tolerance <= tb3.orient[0] <= tb3.rot_goal + tb3.rotation_tolerance
-
-def did_rotate_to_angle(tb3, angle, tolerance):
-    return angle - tolerance <= tb3.orient[0] <= angle + tolerance
-
-def rotate_degree_specific(tb3, init_angle, angle):
-    rotate(tb3, 15)
-    tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
-
-def rotate_degree(tb3):
-    if tb3.pre_rotate == 9999:
-        tb3.pre_rotate = tb3.orient[0]
-    if tb3.rotation_clockwise:
-        rotate_dir(tb3)
-        tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) + tb3.beam[0])
-    else:
-        rotate_dir(tb3)
-        tb3.rot_goal = rad_overlap((tb3.pre_rotate * (180 / math.pi)) - tb3.beam[0])
-def drive_until_wall(tb3):
-    drive(tb3, tb3.drive_velocity)
-    if tb3.goal_road:
-        if check_front_wall(tb3, end = True):
-            stop(tb3)
-            tb3.state = 6
-    else:
-        if check_front_wall(tb3):
-            stop(tb3)
-            tb3.state = 3
 
 def stop(tb3: object):
     """

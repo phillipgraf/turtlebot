@@ -8,8 +8,8 @@ from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
-from utils.tb3_camera import start_video, detect_red
-from utils.tb3_lds_laser import collide_with_wall, detect_red_with_lds_front, search_object, get_grouped_beams, check_dead_end
+from utils.tb3_camera import *
+from utils.tb3_lds_laser import *
 from utils.tb3_motion import *
 from utils.tb3_logs import diagnostics
 from utils.tb3_mapping import *
@@ -146,21 +146,6 @@ class Tb3(Botnode):
             self.back_go = False
             self.drive_back = True
 
-        # get_grouped_beams(self, self.beams)
-        # dead_ends = [group for group in self.groups if check_dead_end(self, group, visualize=True)]
-        # if len(dead_ends) >= 1:
-        #     print(f"DEADENDS:\n\n{dead_ends}")
-        #     for end in dead_ends:
-        #         if 0 in end:
-        #             self.object_front = True
-        #         elif 90 in end:
-        #             self.object_right = True
-        #         elif 180 in end:
-        #             self.object_back = True
-        #         elif 270 in end:
-        #
-        #          self.object_left = True
-
         if self.rot:
             rotate_90_degree(self, self.rotate_direction, orient)
         else:
@@ -211,12 +196,7 @@ class Tb3(Botnode):
                             self.rotate_direction = 5
                         else:
                             self.rotate_direction = -5
-                    # elif self.object_right:
-                    #     stop(self)
-                    #     drive(self, 30)
-                    # elif self.object_left:
-                    #     stop(self)
-                    #     drive(self, 30)
+
                     else:
                         self.go = True
             diagnostics(self)

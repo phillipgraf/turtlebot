@@ -1,6 +1,6 @@
 import math
 import os
-from utils.tb3_lds_laser import check_front_wall, check_right_wall, check_left_wall, check_back_wall, detect_red_with_lds, get_red_beam, detect_red_with_lds_front, check_dead_end
+from utils.tb3_lds_laser import *
 
 def diagnostics_final(tb3):
     os.system("clear")
@@ -26,90 +26,33 @@ def diagnostics(tb3):
     # print(f"{get_title()}")
     try:
         if tb3.pos is not None and tb3.orient is not None:
-            #if hasattr(tb3, 'odom_sub'):
-                #print(
-                 #   f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
-                #print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
+            if hasattr(tb3, 'odom_sub'):
+                print(
+                    f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
+                print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
 
-            print(f"{get_state(tb3.state)}")
-            #if tb3.state == -2 or tb3.state == -4:
-                # print(f"Which directions are searched:  (SEARCH > FOUND)\n")
-                # print(f"\t\t{tb3.front_search}>{tb3.object_front}")
-                # print(f"\t\t    ^")
-                # print(f"{tb3.left_search}>{tb3.object_left} \t\t\t {tb3.right_search}>{tb3.object_right}")
-                # print(f"\t\t    v")
-                # print(f"\t\t{tb3.back_search}>{tb3.object_back}")
-                # print("\n***OBJECT VIEW***")
-                #print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
-                #print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
-                #print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
-                #print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
+            print("\n***OBJECT VIEW***")
+            print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
+            print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
+            print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
+            print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
 
-            if tb3.state == -4:
-                print("\n***COMPASS VIEW***")
-                print(f"View: {tb3.VIEW}")
-                # print(f"Rotating: {tb3.rot}")
-                # if tb3.rotate_direction is None:
-                #     rotate_direction = "-"
-                # elif tb3.rotate_direction < 0:
-                #     rotate_direction = "right"
-                # elif tb3.rotate_direction > 0:
-                #     rotate_direction = "left"
-                # else:
-                #     rotate_direction = "-"
-                # print(f"Rotate direction:{rotate_direction}")
-                # print(f"Driving: {tb3.go}")
-                # print(f"DEAD_END: {tb3.rot_back}")
-                #
-                # print("\n***COLOR DETECTION***")
-                # print(f"Detected red wall: {tb3.color}")
+            print("\n***COMPASS VIEW***")
+            print(f"View: {tb3.VIEW}")
+            print(f"Rotating: {tb3.rot}")
+            if tb3.rotate_direction is None:
+                rotate_direction = "-"
+            elif tb3.rotate_direction < 0:
+                rotate_direction = "right"
+            elif tb3.rotate_direction > 0:
+                rotate_direction = "left"
+            else:
+                rotate_direction = "-"
+            print(f"Rotate direction:{rotate_direction}")
 
-            print("\n***MAPPING***")
-            #print(f"Bot is in cell: {tb3.cell}")
-            #print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
-            #print("Cell storage:", tb3.cell_storage)
-            print("Known cells:", tb3.known_cells)
-            #print("Node ID:", tb3.node_id)
-            print("Neighbours Cells:", tb3.neighbour_cells)
-            print("Unkown Cells:", tb3.unkown_cells)
-            print("Next Cell:", tb3.next_cell)
-            print("Cell Counter:", tb3.cell_counters)
-            #tb3.maze.show()
+            print("\n***COLOR DETECTION***")
+            print(f"Detected red wall: {tb3.color}")
 
-            # print(f"Check for Dead ends: {tb3.deadend}")
-
-            # if tb3.state == 0 or tb3.state == 1:
-            print(f"List of beam groups that extend the distance: {tb3.beam_distance}")
-            print(f"#Beams\t|\t <\t>")
-            print(f"{'-' * 35}")
-            for g in tb3.groups:
-                print(f"{len(g)}\t|\t{g[0]}\t{g[-1]}\t\t{check_dead_end(tb3, g)}")
-            if tb3.state == 1 or tb3.state == 5:
-                print(f"Rotation speed: {tb3.rotation_velocity}")
-            # print(f"Rotation tolerance: {tb3.rotation_tolerance}")
-            # print(f"pre rotation value: {tb3.pre_rotate * (180 / math.pi)}")
-            # print(f"rotation goal: {tb3.rot_goal} || {tb3.rot_goal * (180 / math.pi)}")
-            # print(f"current rotation: {tb3.orient[0]} || {tb3.orient[0] * (180 / math.pi)}")
-            # print(f"Rotation clockwise: {tb3.rotation_clockwise}")
-            # print(f"Target Beam: {tb3.beam[0]} >> {tb3.beam[1]}")
-            # print(f"latest Origin: {tb3.last_origin_degree}")
-            if tb3.state == 2:
-                print(f"Speed: {tb3.drive_velocity}")
-                print(f"Collisions:\n")
-                print(f"\t{check_front_wall(tb3)}")
-                print(f"\t  ^")
-                print(f"{check_left_wall(tb3)} <\t\t> {check_right_wall(tb3)}")
-                print(f"\t  v")
-                print(f"\t{check_back_wall(tb3)}")
-
-            if tb3.state == 3:
-                print(f"Checking the laser indicators:\nRed found: {detect_red_with_lds(tb3)}")
-                print(f"Red beam: {get_red_beam(tb3)}")
-                print(f"Static red beam: {tb3.red_beam}")
-                print(f"Red at front: {detect_red_with_lds_front(tb3)}")
-
-            if hasattr(tb3, 'red_percentage'):
-                print(f"Looking for red...\nRed found in percent: {tb3.red_percentage}")
     except Exception as e:
         print(e)
 

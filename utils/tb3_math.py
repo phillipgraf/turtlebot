@@ -1,9 +1,5 @@
 import math
 
-
-def mean(lst):
-    return sum(lst) / len(lst)
-
 def rad(deg):
     """
     Convert degree to radians
@@ -12,9 +8,3 @@ def rad(deg):
     """
     return math.radians(deg)
 
-def rad_overlap(deg):
-    if deg > 180:
-        deg -= 360
-    if deg < -180:
-        deg += 360
-    return math.radians(deg)
