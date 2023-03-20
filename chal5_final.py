@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 
 from utils.tb3_camera import start_video, detect_red
-from utils.tb3_lds_laser import collide_with_wall, detect_red_with_lds_front, search_object, get_grouped_beams, check_dead_end
+from utils.tb3_lds_laser import collide_with_wall, detect_red_with_lds_front, search_object, get_grouped_beams, check_dead_end, get_max_dist
 from utils.tb3_motion import *
 from utils.tb3_logs import diagnostics
 from utils.tb3_mapping import *
@@ -28,17 +28,17 @@ class Tb3(Botnode):
             'cmd_vel',  # topic name
             1)  # history depth
 
-        self.odom_sub = self.create_subscription(
-            Odometry,
-            'odom',
-            self.odom_callback,
-            qos_profile_sensor_data)
-
         self.scan_sub = self.create_subscription(
             LaserScan,
             'scan',
             self.scan_callback,  # function to run upon message arrival
             qos_profile_sensor_data)  # allows packet loss
+
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            'odom',
+            self.odom_callback,
+            qos_profile_sensor_data)
 
         self.bridge = CvBridge()
         self.image_received = False
@@ -95,6 +95,14 @@ class Tb3(Botnode):
         self.groups = []
         self.beams = []
         self.neighbour_cells = {}
+        self.next_cell = []
+        self.closed_path = False
+        self.unkown_cells = []
+        self.init_unknown_cell = True
+        self.check_for_unknown_cells = True
+
+        self.cell_counters = {}
+        self.last_cell = [0,0]
 
         self.back_go = False
         self.drive_back = False
@@ -124,11 +132,12 @@ class Tb3(Botnode):
             self.cell[0] = 1
             self.cell[1] = 1
             self.cell_storage.append(self.cell[:])
+            get_neighbours_cell(self, self.cell)
             self.init_cell = False
             init_tree(self)
             self.init_cell = False
         else:
-            current_cell = get_cell(self)
+            current_cell = get_cell(self)[:]
             get_neighbours_cell(self, current_cell)
             if check_cell(self, get_cell(self)):
                 self.known_cells = self.cell_storage[:]
@@ -147,27 +156,22 @@ class Tb3(Botnode):
             get_and_set_view(self, orient, angel_coefficient=2)
             drive(self, -20)
             start_search(self)
+            if self.VIEW == "north":
+                self.VIEW = "south"
+            if self.VIEW == "south":
+                self.VIEW = "north"
+            if self.VIEW == "east":
+                self.VIEW = "west"
+            if self.VIEW == "west":
+                self.VIEW = "east"
             self.back_go = False
             self.drive_back = True
 
-        # get_grouped_beams(self, self.beams)
-        # dead_ends = [group for group in self.groups if check_dead_end(self, group, visualize=True)]
-        # if len(dead_ends) >= 1:
-        #     print(f"DEADENDS:\n\n{dead_ends}")
-        #     for end in dead_ends:
-        #         if 0 in end:
-        #             self.object_front = True
-        #         elif 90 in end:
-        #             self.object_right = True
-        #         elif 180 in end:
-        #             self.object_back = True
-        #         elif 270 in end:
-        #
-        #          self.object_left = True
-
         if self.rot:
             rotate_90_degree(self, self.rotate_direction, orient)
+            self.check_for_unknown_cells = False
         else:
+            self.check_for_unknown_cells = True
             if len(self.beam_intensities) > 1 and detect_red_with_lds_front(self):
                 if collide_with_wall(self):
                     stop(self)
@@ -217,6 +221,24 @@ class Tb3(Botnode):
         self.beam_intensities = msg.intensities
 
         search_object(self, laser=msg.ranges)
+
+        if self.init_unknown_cell or cell_center(self, thresh=0.1) and self.check_for_unknown_cells:
+
+            counter = len(get_unkown_cells(self))
+
+            if self.last_cell != get_cell(self):
+                set_cell_counter(self, self.cell, counter)
+                self.last_cell = get_cell(self)[:]
+
+            self.next_cell = self.neighbour_cells[self.VIEW]
+            if self.next_cell not in self.unkown_cells:
+                self.rot = True
+                self.rotate_direction = 5
+
+            if self.last_cell in self.unkown_cells:
+                if self.cell_counters[str(self.last_cell)] <= 0:
+                    self.unkown_cells.remove(self.last_cell)
+            self.init_unknown_cell = False
 
 
 def main(args=None):

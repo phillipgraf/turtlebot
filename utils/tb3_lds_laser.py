@@ -68,6 +68,12 @@ def search_object(tb3: object, laser):
         else:
             tb3.object_left = False
 
+def get_max_dist(tb3, laser):
+    tb3.max_dist_front = laser[0]
+    tb3.max_dist_back = laser[180]
+    tb3.max_dist_right = laser[-90]
+    tb3.max_dist_left = laser[90]
+
 def collide_with_wall(tb3):
     return any(tb3.beams[x] < 0.15 for x in range(-30, 30))
 

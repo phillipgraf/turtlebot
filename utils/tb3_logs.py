@@ -26,13 +26,13 @@ def diagnostics(tb3):
     # print(f"{get_title()}")
     try:
         if tb3.pos is not None and tb3.orient is not None:
-            if hasattr(tb3, 'odom_sub'):
-                print(
-                    f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
-                print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
+            #if hasattr(tb3, 'odom_sub'):
+                #print(
+                 #   f"X{' ' * len(str(tb3.pos.x))}\tY{' ' * len(str(tb3.pos.y))}\tZ{' ' * len(str(tb3.pos.z))}\t|\tRotX{' ' * len(str(tb3.orient[0]))}\tRotY{' ' * (len(str(tb3.orient[1])) - 3)}\tRotZ")
+                #print(f"{tb3.pos.x}\t{tb3.pos.y}\t{tb3.pos.z}\t|\t{tb3.orient[0]}\t{tb3.orient[1]}\t{tb3.orient[2]}")
 
             print(f"{get_state(tb3.state)}")
-            # if tb3.state == -2 or tb3.state == -4:
+            #if tb3.state == -2 or tb3.state == -4:
                 # print(f"Which directions are searched:  (SEARCH > FOUND)\n")
                 # print(f"\t\t{tb3.front_search}>{tb3.object_front}")
                 # print(f"\t\t    ^")
@@ -40,14 +40,14 @@ def diagnostics(tb3):
                 # print(f"\t\t    v")
                 # print(f"\t\t{tb3.back_search}>{tb3.object_back}")
                 # print("\n***OBJECT VIEW***")
-                # print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
-                # print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
-                # print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
-                # print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
+                #print(f"FRONT| Object in range: {tb3.object_front} | Detection distance: {tb3.min_dist_front} | Object at distance: {tb3.max_dist_front}")
+                #print(f"LEFT | Object in range: {tb3.object_left}  | Detection distance: {tb3.min_dist_left}  | Object at distance: {tb3.max_dist_left}")
+                #print(f"BACK | Object in range: {tb3.object_back}  | Detection distance: {tb3.min_dist_back}  | Object at distance: {tb3.max_dist_back}")
+                #print(f"RIGHT| Object in range: {tb3.object_right} | Detection distance: {tb3.min_dist_right} | Object at distance: {tb3.max_dist_right}")
 
-            #if tb3.state == -4:
-                # print("\n***COMPASS VIEW***")
-                # print(f"View: {tb3.VIEW}")
+            if tb3.state == -4:
+                print("\n***COMPASS VIEW***")
+                print(f"View: {tb3.VIEW}")
                 # print(f"Rotating: {tb3.rot}")
                 # if tb3.rotate_direction is None:
                 #     rotate_direction = "-"
@@ -65,13 +65,16 @@ def diagnostics(tb3):
                 # print(f"Detected red wall: {tb3.color}")
 
             print("\n***MAPPING***")
-            print(f"Bot is in cell: {tb3.cell}")
-            print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
-            print("Cell storage:", tb3.cell_storage)
+            #print(f"Bot is in cell: {tb3.cell}")
+            #print(f"Bot in a new cell: {False if tb3.cell in tb3.known_cells else True}")
+            #print("Cell storage:", tb3.cell_storage)
             print("Known cells:", tb3.known_cells)
-            print("Node ID:", tb3.node_id)
+            #print("Node ID:", tb3.node_id)
             print("Neighbours Cells:", tb3.neighbour_cells)
-            tb3.maze.show()
+            print("Unkown Cells:", tb3.unkown_cells)
+            print("Next Cell:", tb3.next_cell)
+            print("Cell Counter:", tb3.cell_counters)
+            #tb3.maze.show()
 
             # print(f"Check for Dead ends: {tb3.deadend}")
 
