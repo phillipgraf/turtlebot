@@ -66,6 +66,8 @@ def stop(tb3: object):
     vel(tb3, 0, 0)
     tb3.rotate_direction = 0
     tb3.rot = False
+    tb3.rot_back = False
+    tb3.drive_back = False
 
 
 def start_search(tb3):
@@ -89,6 +91,8 @@ def drive(tb3: object, velocity: int):
     """
     if velocity == 0:
         stop(tb3)
+        return
+    if tb3.drive_back:
         return
     vel(tb3, velocity, 0)
 
@@ -210,5 +214,62 @@ def rotate_90_degree(tb3, direction_to_move, orient_of_bot):
                 stop(tb3)
                 tb3.go = True
                 start_search(tb3)
+        else:
+            return
+
+
+def rotate_180_degree(tb3, direction_to_move, orient_of_bot):
+    """
+    Rotate to the bot to the given point of the compass. Currently only "north", "west", "south" and "east" implemented.
+    Also get_and_set the view of the bot.
+
+    Points of the compass:
+    - "north"
+    - "west"
+    - "south"
+    - "east"
+
+    :param tb3: Bot object.
+    :param direction_to_move: Positiv integer for left
+                              Negativ integer for right
+    :param orient_of_bot:  Current orientation state of the bot
+    """
+    if tb3.VIEW == "north":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "south":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "west":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "east":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "south":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "north":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
+        else:
+            return
+
+    elif tb3.VIEW == "east":
+        rotate(tb3, direction_to_move)
+        get_and_set_view(tb3, orient_of_bot)
+        if tb3.VIEW == "west":
+            stop(tb3)
+            tb3.go = True
+            start_search(tb3)
         else:
             return

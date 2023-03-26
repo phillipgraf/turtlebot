@@ -59,6 +59,7 @@ def diagnostics(tb3):
                     rotate_direction = "-"
                 print(f"Rotate direction:{rotate_direction}")
                 print(f"Driving: {tb3.go}")
+                print(f"DEAD_END: {tb3.rot_back}")
 
                 print("\n***COLOR DETECTION***")
                 print(f"Detected red wall: {tb3.color}")

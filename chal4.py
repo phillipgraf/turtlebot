@@ -51,6 +51,7 @@ class Tb3(Botnode):
         self.state = -4
         self.go = True
         self.rot = False
+        self.rot_back = False
         self.front_search = True
         self.back_search = True
         self.right_search = True
@@ -73,8 +74,8 @@ class Tb3(Botnode):
         self.pos = None
         self.dead_end = False
 
-        self.min_dist_front = 0.5
-        self.min_dist_back = 0.5
+        self.min_dist_front = 0.7
+        self.min_dist_back = 0.7
         self.min_dist_left = 1
         self.min_dist_right = 1
         self.max_dist_front = 0
@@ -93,6 +94,9 @@ class Tb3(Botnode):
         self.init_cell = True
         self.groups = []
         self.beams = []
+
+        self.back_go = False
+        self.drive_back = False
 
 
     def img_callback(self, msg):
@@ -133,6 +137,14 @@ class Tb3(Botnode):
             start_search(self)
             self.go = False
 
+        if self.back_go:
+            self.first_time_center = False
+            get_and_set_view(self, orient, angel_coefficient=2)
+            drive(self, -20)
+            start_search(self)
+            self.back_go = False
+            self.drive_back = True
+
         # get_grouped_beams(self, self.beams)
         # dead_ends = [group for group in self.groups if check_dead_end(self, group, visualize=True)]
         # if len(dead_ends) >= 1:
@@ -145,7 +157,9 @@ class Tb3(Botnode):
         #         elif 180 in end:
         #             self.object_back = True
         #         elif 270 in end:
-        #             self.object_left = True
+        #
+        #          self.object_left = True
+
         if self.rot:
             rotate_90_degree(self, self.rotate_direction, orient)
         else:
@@ -155,12 +169,15 @@ class Tb3(Botnode):
                 else:
                     drive(self, 30)
             else:
-                if not cell_center(self, thresh=0.2):
+                if not cell_center(self, thresh=0.1):
                     drive(self, 30)
                     self.first_time_center = True
                 elif self.first_time_center:
                     self.first_time_center = False
-                    if self.object_front and self.object_left:
+                    if self.object_front and self.object_left and self.object_right:
+                        stop(self)
+                        self.back_go = True
+                    elif self.object_front and self.object_left:
                         stop(self)
                         self.rot = True
                         self.rotate_direction = -5
@@ -168,10 +185,6 @@ class Tb3(Botnode):
                         stop(self)
                         self.rot = True
                         self.rotate_direction = 5
-                    # elif self.object_front:
-                        #stop(self)
-                    #     self.rot = True
-                    #     self.rotate_direction = 15
                     elif self.object_left and self.object_right:
                         drive(self, 30)
                     elif not self.object_right:
